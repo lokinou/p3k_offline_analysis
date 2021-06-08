@@ -1,0 +1,7 @@
+*.gdf
+*.dat
+*.eeg
+*.edf
+*.ov
+.idea
+.pyc
