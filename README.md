@@ -18,7 +18,7 @@
 - Download Anaconda Python
 - open an anaconda prompt
 - move to the current repository folder `cd %USERPROFILE%\Desktop\p300_analysis_from_openvibe`
-- create the anaconda environment `conda env create -f requirements.yaml` 
+- create the anaconda environment `conda env create -f environment.yml` 
 - activate the environment `conda activate p300mne`
 - Check whether mne was installed by pasting this code `python -c "import mne"`. It should trigger no error
 
