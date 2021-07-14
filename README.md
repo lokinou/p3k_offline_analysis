@@ -1,4 +1,9 @@
-
+Uses nice preprocessing tools from mne: Current Source Density (CSD),  Reference Electrode Standardization Technique (REST)
+Riemannian based artifact removal based Artifact Subspace Reconstruction from meegkit package [thanks @nbara](https://github.com/nbara/python-meegkit) 
+Artifact channel and epoch rejection based on variance
+- Computes P300 ERP plots
+- Computes k-fold Linear Discriminant Analysis with shrinkage
+- Shows signed rsquared plots from wyrm (python port of bbci) [thanks @venthur and @BenjaminBlankertz]() 
 
 
 
