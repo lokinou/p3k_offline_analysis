@@ -19,14 +19,15 @@ I use here
 # Requirements
 
 - OpenViBE ( for converting to gdf)
-- python 3.6+, MNE, jupyter
+- python 3.8.10(?), MNE, jupyter
 
 ## Install python environment
 
 - Download Anaconda Python
 - open an anaconda prompt
 - move to the current repository folder `cd %USERPROFILE%\Desktop\p300_analysis_from_openvibe`
-- create the anaconda environment `conda env create -f environment.yml` 
+- create the anaconda environment `conda env create -f environment.yml python=3.8.10`
+- *if it does not work, try another version of python*
 - activate the environment `conda activate p300mne`
 - install additional packages 
   - `pip install "git+https://github.com/nbara/python-meegkit"`
