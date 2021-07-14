@@ -1,12 +1,14 @@
 # P300 Analysis from openvibe
-**Convert - Plot ERPs - Run LDA - Check Features Map**
-I use here 
-- nice preprocessing tools from mne: Current Source Density (CSD),  Reference Electrode Standardization Technique (REST) @mne-tools [link](https://github.com/mne-tools/mne-python)
+**Convert - Plot ERPs - Run LDA - Check Features Map**\
+I use
+- nice preprocessing, epoching and plotting tools from MNE-python:
+ - Current Source Density (CSD)
+ -  Reference Electrode Standardization Technique (REST) @mne-tools [link](https://github.com/mne-tools/mne-python)
 - Riemannian based artifact removal based Artifact Subspace Reconstruction from meegkit package (thanks@nbara) [link](https://github.com/nbara/python-meegkit) 
 - Artifact channel and epoch rejection based on variance
  - Computes P300 ERP plots
  - Computes k-fold Linear Discriminant Analysis with shrinkage
- - Shows signed rsquared plots from wyrm (python port of bbci, thanks @bbci) [link](https://github.com/bbci/wyrm) 
+ - Shows signed rsquared plots using wyrm (python port of bbci, thanks @bbci) [link](https://github.com/bbci/wyrm) 
 
 
 
