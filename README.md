@@ -56,7 +56,7 @@ Check my [tutorial here](https://github.com/lokinou/openvibe_to_gdf_tutorial)
 
 1. Put your `.gdf` or `.dat` files into the `./data_sample` folder
 2. Manually enter the electrode names
-3. Tweak further tweak analysis parameters as will (resampling, preprocessing)
+3. Tweak further analysis parameters as will (resampling, preprocessing)
 4. Execute all cells
 5. figures are saved into `./out`
 
