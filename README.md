@@ -1,4 +1,4 @@
-# P300 Analysis from openvibe
+# P300 Analysis from openvibe/BCI2000
 **Convert - Plot ERPs - Run LDA - Check Features Map**\
 In this jupyter notebook I combined several tools:
 - nice preprocessing, epoching and plotting tools from MNE-python, in particular:
