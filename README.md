@@ -52,3 +52,11 @@ Check my [tutorial here](https://github.com/lokinou/openvibe_to_gdf_tutorial)
   - if jupyter lab crashes (win32api error), reinstall it from conda `conda install pywin32 jupyterlab`
   - if jupyter lab does not want to work, use jupyter notebook instead by executing `jupyter notebook p300mne.ipynb`
 
+## Usage
+
+1. Put your `.gdf` or `.dat` files into the `./data_sample` folder
+2. Manually enter the electrode names
+3. Tweak further tweak analysis parameters as will (resampling, preprocessing)
+4. Execute all cells
+5. figures are saved into `./out`
+
