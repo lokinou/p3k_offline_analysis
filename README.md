@@ -1,5 +1,5 @@
 # P300 Analysis from openvibe/BCI2000
-**Convert - Plot ERPs - Run LDA - Check Features Map**\
+**Convert - Plot ERPs - Run LDA  - Check Features Map - Offline classification**\
 In this jupyter notebook I combined several tools:
 - nice preprocessing, epoching and plotting tools from MNE-python, in particular:
   - Current Source Density (CSD)
@@ -10,13 +10,14 @@ In this jupyter notebook I combined several tools:
 The cool stuff it does:
 1. Computes P300 ERP plots
 2. Computes k-fold Linear Discriminant Analysis with shrinkage
-3. Shows signed rsquared plots using wyrm (python port of bbci, thanks @bbci) [link](https://github.com/bbci/wyrm) 
+3. Computes accuracy (for BCI2000 P300 scenarios)
+4. Shows signed rsquared plots using wyrm (python port of bbci, thanks @bbci) [link](https://github.com/bbci/wyrm) 
 
 
 
-| Signal output                                                | Signed r square output                                       |
-| ------------------------------------------------------------ | ------------------------------------------------------------ |
-| <img src="./img/8ch_output.png" alt="Analysis_P300" style="zoom:50%;" /> | <img src="./img/signed_rsquare.png" alt="Analysis_P300" style="zoom:60%;" /> |
+| <img src="./img/signed_rsquare.png" alt="Analysis_P300" style="zoom:70%;" /><img src="./img/kfold_accuracy.png" alt="Analysis_P300" style="zoom:25%;" /> |
+| ------------------------------------------------------------ |
+| <img src="./img/8ch_output.png" alt="Analysis_P300" style="zoom:50%;" /> |
 
 
 
