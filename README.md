@@ -17,7 +17,7 @@ The cool stuff it does:
 
 |                    offline classification                    | signed r-square maps                                         |
 | :----------------------------------------------------------: | ------------------------------------------------------------ |
-| <img src="./img/signed_rsquare.png" alt="Analysis_P300" style="zoom:45%;" /> | <img src="./img/kfold_accuracy.png" alt="Analysis_P300" style="zoom:15%;" /> |
+| <img src="./img/signed_rsquare.png" alt="Analysis_P300" style="zoom:45%;" /> | <img src="./img/kfold_accuracy.png" alt="kfold_accuracy" style="zoom:5%;" /> |
 
 <img src="./img/8ch_output.png" alt="Analysis_P300" style="zoom:50%;" />
 
