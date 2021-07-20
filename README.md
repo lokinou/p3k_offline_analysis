@@ -15,11 +15,11 @@ The cool stuff it does:
 
 
 
-| <img src="./img/signed_rsquare.png" alt="Analysis_P300" style="zoom:70%;" /><img src="./img/kfold_accuracy.png" alt="Analysis_P300" style="zoom:25%;" /> |
-| ------------------------------------------------------------ |
-| <img src="./img/8ch_output.png" alt="Analysis_P300" style="zoom:50%;" /> |
+| <img src="./img/kfold_accuracy.png" alt="Analysis_P300" style="zoom:25%;" /> | <img src="./img/signed_rsquare.png" alt="Analysis_P300" style="zoom:15%;" /> |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+|                                                              |                                                              |
 
-
+<img src="./img/8ch_output.png" alt="Analysis_P300" style="zoom:50%;" />
 
 # Requirements
 
