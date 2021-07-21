@@ -10,7 +10,7 @@ In this jupyter notebook I combined several tools:
 The cool stuff it does:
 1. Computes P300 ERP plots
 2. Computes k-fold Linear Discriminant Analysis with shrinkage
-3. Computes accuracy (for BCI2000 P300 scenarios)
+3. Computes accuracy (for BCI2000 P300 scenarios and OpenVibe)
 4. Shows signed rsquared plots using wyrm (python port of bbci, thanks @bbci) [link](https://github.com/bbci/wyrm) 
 
 
