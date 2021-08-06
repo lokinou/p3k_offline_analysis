@@ -50,6 +50,8 @@ class DisplayPlots:
     erp_heatmap: bool = False
     erp_heatmap_channelwise: bool = False
     signed_r_square: bool = True
+    best_channel_erp: bool = True
+    offline_accuracy: bool = True
 
 TARGET_MAP = {'0':0, '1':1, '10':10}
 
@@ -487,7 +489,7 @@ def plot_channel_average(epochs: mne.Epochs):
                 leg = ax.legend(handles, labels)
 
     print('plotting averaged channels')
-    fig = mne.viz.plot_compare_evokeds(evokeds, picks=epochs.info['ch_names'], combine='mean',
+    ax_evoked = mne.viz.plot_compare_evokeds(evokeds, picks=epochs.info['ch_names'], combine='mean',
                                      legend=False,
                                      axes=axes[-1, -1], show=False)
 
