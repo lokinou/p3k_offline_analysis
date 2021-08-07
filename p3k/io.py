@@ -9,6 +9,7 @@ from p3k import bci2000, openvibe
 
 def load_eeg_from_folder(data_path: str,
                          speller_info: SpellerInfo,
+                         begin_stimuli_code: int,
                          fix_openvibe_annotations: bool = True) -> Tuple[mne.io.BaseRaw, str, SpellerInfo]:
     nb_stimlus_rows = None  # stores the number of rows in the P300 to separate rows and columns
     os.path.exists(data_path)
@@ -36,7 +37,9 @@ def load_eeg_from_folder(data_path: str,
 
 
     elif acquisition_software == 'bci2000':
-        raws, (nb_stimulus_rows, nb_stimulus_cols, nb_seq) = bci2000.load_bci2k(fnames, verbose=False)
+        raws, (nb_stimulus_rows, nb_stimulus_cols, nb_seq) = bci2000.load_bci2k(fnames,
+                                                                                begin_stimuli_code=begin_stimuli_code,
+                                                                                verbose=False)
         SpellerInfo.nb_stimulus_rows = nb_stimulus_rows
         SpellerInfo.nb_stimulus_cols = nb_stimulus_cols
         SpellerInfo.nb_seq = nb_seq

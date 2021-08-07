@@ -146,10 +146,14 @@ def run_p300_LDA_analysis(epochs: mne.epochs,
         # train the LDA classifier
         clf.fit(X_train, y_train)
 
+
         # split the tests samples for each individual trial enable P300 speller target prediction and accuracy
         nb_test_trials_in_split = len(list_trials)
         for i_trial in list(range(len(test_index))):
             trial_nb = test_index[i_trial] + 1
+
+            true_target_cols = None
+            true_target_rows = None
 
             # both row and columns for generic classification
             epoch_test = epochs[epochs.metadata['Trial_nb'] == trial_nb]
@@ -227,25 +231,43 @@ def run_p300_LDA_analysis(epochs: mne.epochs,
                                                  np.where(epoch_cols.metadata['is_target'] == 1)[0]]['stim'])[0]  # does not handle k fold with several trials
                 cols_successful = pred_stim_cols_cum == true_target_cols
 
-                if not skip_rows and not skip_cols:
-                    successful_pred_cum = np.logical_and(rows_successful, cols_successful).astype(np.uint8)
-                elif skip_rows and skip_cols:
-                    print('Errors, cannot classify if both rows and columns are skipped')
-                    raise Exception
-                elif skip_rows:
-                    successful_pred_cum = cols_successful
-                elif skip_cols:
-                    successful_pred_cum = rows_successful
+            if not skip_rows and not skip_cols:
+                successful_pred_cum = np.logical_and(rows_successful, cols_successful).astype(np.uint8)
+            elif skip_rows and skip_cols:
+                print('Errors, cannot classify if both rows and columns are skipped')
+                raise Exception
+            elif skip_rows:
+                successful_pred_cum = cols_successful
+            elif skip_cols:
+                successful_pred_cum = rows_successful
 
-        # Associate predicted targets to stimuli
-        for i in range(len(score_cum)):
-            line = dict(
-                zip(score_table.columns, [fold_counter + 1, i_trial + 1, i + 1,  # fold, fold_trial, nb of sequences
-                                          score_cum[i],
-                                          auc_cum[i], true_target_rows, pred_stim_rows_cum[i],
-                                          true_target_cols, pred_stim_cols_cum[i], successful_pred_cum[i]]))
 
-            score_table = score_table.append(line, ignore_index=True)
+            # Associate predicted targets to stimuli
+            for i in range(len(score_cum)):
+
+                # deal with undefined columns or rows
+                if true_target_cols is None:
+                    col_true = -1
+                    col_pred = -1
+                else:
+                    col_true = true_target_cols
+                    col_pred = pred_stim_cols_cum[i]
+
+                if true_target_rows is None:
+                    row_true = -1
+                    row_pred = -1
+                else:
+                    row_true = true_target_rows
+                    row_pred = pred_stim_rows_cum[i]
+
+                # write line to score table
+                line = dict(
+                    zip(score_table.columns, [fold_counter + 1, i_trial + 1, i + 1,  # fold, fold_trial, nb of sequences
+                                              score_cum[i],
+                                              auc_cum[i], row_true, row_pred,
+                                              col_true, col_pred, successful_pred_cum[i]]))
+
+                score_table = score_table.append(line, ignore_index=True)
 
         print('fold {} partial score: {}, AUC={}'.format(fold_counter, np.round(score_cum[-1], decimals=3),
                                                          np.round(auc_cum[-1], decimals=3)))

@@ -1,12 +1,15 @@
 from BCI2kReader import BCI2kReader as b2k
 from BCI2kReader import FileReader as f2k
 
+import mne
+import os
 import numpy as np
+import matplotlib.pyplot as plt
 
 raws = []
 
 
-def extract_annotations(filename, verbose=False):
+def extract_annotations(filename, begin_stimuli_code: int, verbose=False):
     display_preprocessing_plots = False
     file = b2k.BCI2kReader(filename)
 
@@ -49,7 +52,7 @@ def extract_annotations(filename, verbose=False):
     # index of targets in the list of stimuli onsets
     description_targets[np.searchsorted(code_change_idx, target_idx)] = 1
     description_codes = stimulus_codes[
-                            code_change_idx] + stimulus_padding  # start codes at 100 because 0 and 1 are used for target and nontarget
+                            code_change_idx] + begin_stimuli_code  # start codes at 100 because 0 and 1 are used for target and nontarget
     # merge code and target decriptions
     description = np.zeros(description_targets.shape[0] * 2, dtype=np.uint)
     description[np.arange(description_targets.shape[0] * 2, step=2)] = description_codes
@@ -122,7 +125,7 @@ def extract_annotations(filename, verbose=False):
     return annotations
 
 
-def load_bci2k(filename_list, verbose=False):
+def load_bci2k(filename_list, begin_stimuli_code: int, verbose=False):
     """
     return MNE raw, number of rows in the matrix
     """
@@ -163,7 +166,7 @@ def load_bci2k(filename_list, verbose=False):
             # Manually force the filename or mne complains
             raw_array._filenames = [os.path.basename(fn)]
 
-            annotations = extract_annotations(fn, verbose=False)
+            annotations = extract_annotations(fn, begin_stimuli_code=begin_stimuli_code, verbose=False)
             raw_array.set_annotations(annotations)
             raws.append(raw_array)
     return raws, (nb_stim_rows, nb_stim_cols, nb_seq)

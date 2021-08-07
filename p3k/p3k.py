@@ -121,7 +121,7 @@ def define_channels(raw: mne.io.BaseRaw,
         types.append(t)
 
     type_map = dict(zip(channel_names, types))
-
+    print(cname_map)
     # rename and pick eeg
     raw.rename_channels(cname_map, allow_duplicates=False)
     raw.set_channel_types(type_map)
@@ -228,7 +228,7 @@ def train_asr(raw: mne.io.BaseRaw) -> ASR:
     method = 'euclid'  # pymanopt library still buggy
     window_s = .5  # .5 sec window of analysis
     data_interval_s = None  # (begin, end) in sec of the training sample
-    estimator = 'lwf'  #leave blank if using euclidian mode
+    #estimator = 'lwf'  #leave blank if using euclidian mode
 
     # define the ASR model using riemannian method
     #asr_model = ASR(sfreq=fs, method=method, win_len=window_s, estimator=estimator)
@@ -237,7 +237,7 @@ def train_asr(raw: mne.io.BaseRaw) -> ASR:
     asr_model = ASR(sfreq=fs, method=method, win_len=window_s)
 
     # The best would be to choose another recording during the same session to train the model without overfitting
-    data = raw._data  # the numpy array with data is stored in the _data variable
+    data = raw._data.copy()  # the numpy array with data is stored in the _data variable
 
     # Select a time interval for training data
     train_idx = None
@@ -257,13 +257,13 @@ def train_asr(raw: mne.io.BaseRaw) -> ASR:
     return asr_model
 
 def apply_asr(raw: mne.io.RawArray, asr_model: ASR, display_plot: bool = False):
-    clean = asr_model.transform(raw._data)
+    clean = asr_model.transform(raw._data.copy())
 
-    display_window_s = 60  #
+    display_window_s = 10  #
     fs = np.int(raw.info['sfreq'])
     if display_plot:  #
-        data_p = raw._data[0:fs * display_window_s]  # reshape to (n_chans, n_times)
-        clean_p = clean[0:fs * display_window_s]
+        data_p = raw._data[:, 0:fs * display_window_s]  # reshape to (n_chans, n_times)
+        clean_p = clean[:, 0:fs * display_window_s]
 
         ###############################################################################
         # Plot the results
@@ -274,7 +274,7 @@ def apply_asr(raw: mne.io.RawArray, asr_model: ASR, display_plot: bool = False):
         # artifacts before running the calibration (hatched area = good).
         nb_ch_disp = len(raw.info['ch_names'])
         times = np.arange(data_p.shape[-1]) / fs
-        f, ax = plt.subplots(nb_ch_disp, sharex=True, figsize=(32, 16))
+        f, ax = plt.subplots(nb_ch_disp, sharex=True, figsize=(16, 8))
         for i in range(nb_ch_disp):
             # ax[i].fill_between(train_idx / fs, 0, 1, color='grey', alpha=.3,
             #                   transform=ax[i].get_xaxis_transform(),
@@ -283,8 +283,8 @@ def apply_asr(raw: mne.io.RawArray, asr_model: ASR, display_plot: bool = False):
             #                   transform=ax[i].get_xaxis_transform(),
             #                   facecolor='none', hatch='...', edgecolor='k',
             #                   label='selected window')
-            ax[i].plot(times, data_p[i], lw=.5, label='before ASR')
-            ax[i].plot(times, clean_p[i], label='after ASR', lw=.5)
+            ax[i].plot(times, data_p[i], lw=.5, label='before ASR', color='r')
+            ax[i].plot(times, clean_p[i], label='after ASR', lw=.5, color='gray')
             # ax[i].plot(times, raw[i]-clean[i], label='Diff', lw=.5)
             # ax[i].set_ylim([-50, 50])
             ax[i].set_ylabel(f'ch{i}')
@@ -310,7 +310,7 @@ def parse_annotations(annotations:mne.annotations.Annotations,
                                                          nb_columns=speller_info.nb_stimulus_cols,
                                                          begin_stimuli_code=stimulus_code_begin)
     elif acquisition_software == "bci2000":
-        pass
+        new_annotations = annotations.copy()
     else:
         print(f"Unknown acquisition software {acquisition_software}")
 
@@ -338,7 +338,7 @@ def parse_annotations(annotations:mne.annotations.Annotations,
     #target_map = dict()
     target_map = TARGET_MAP.copy()
     target_map.update(map_stimuli)
-    target_map
+    #target_map
 
     return new_annotations, target_map
 
