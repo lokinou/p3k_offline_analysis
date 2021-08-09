@@ -8,7 +8,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 import p3k
-from p3k.p3k import SpellerInfo, _reshape_mne_raw_for_lda
+from p3k.offline_analysis import SpellerInfo, _reshape_mne_raw_for_lda
 
 def extract_target_from_trial(epochs: mne.Epochs, trial_nb: int, stimulus_code_begin: int):
     #epoch_trial = epochs[epochs.metadata['Trial_nb'] == trial_nb]

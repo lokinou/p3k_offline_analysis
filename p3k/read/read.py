@@ -1,15 +1,12 @@
 import os
-from typing import Tuple
-
 import mne
-
-from p3k.p3k import SpellerInfo
-from p3k import bci2000, openvibe
-
+import numpy as np
+from typing import Tuple
 
 def load_eeg_from_folder(data_path: str,
                          speller_info: SpellerInfo,
                          begin_stimuli_code: int,
+                         rescale_to_volt: bool = True,
                          fix_openvibe_annotations: bool = True) -> Tuple[mne.io.BaseRaw, str, SpellerInfo]:
     nb_stimlus_rows = None  # stores the number of rows in the P300 to separate rows and columns
     os.path.exists(data_path)
@@ -46,7 +43,18 @@ def load_eeg_from_folder(data_path: str,
         print(f"Actualized SpellerInfo from files {SpellerInfo}")
         raw = mne.concatenate_raws(raws)
 
-
+        if rescale_to_volt:
+            raw = _rescale_microvolts_to_volt(raw)
 
     return (raw, acquisition_software, speller_info)
 
+
+def _rescale_microvolts_to_volt(raw) -> mne.io.BaseRaw:
+    assert np.mean(raw._data[:1000,:]) != 0, "signal is Flat (sum to zero signal)"
+
+    sig_var = np.var(raw._data)
+
+    if sig_var > 1:
+        raw._data = raw._data * 1.e-6
+    print('Rescaled signal to Volt (mean variance={sig_var})')
+    return raw

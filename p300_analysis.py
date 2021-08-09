@@ -16,19 +16,13 @@ if __name__ == "__main__":
     import numpy as np
     import os
     import mne
-    import pandas as pd
     import seaborn as sns
-    import itertools
-    import re
     # LDA
 
-
-    from p3k import io
-    from p3k import openvibe
-    from p3k import p3k
-    from p3k.p3k import SpellerInfo, DisplayPlots
-    from p3k.wyrm import signed_r_square_mne
-    from p3k.classification import p3oddball
+    from p3k.read import read
+    from p3k import offline_analysis
+    from p3k.offline_analysis import SpellerInfo, DisplayPlots
+    from p3k.classification import lda_p3oddball
 
 
     # ## Parameters
@@ -144,8 +138,8 @@ if __name__ == "__main__":
 
     #fn = ["./data_sample/bci2000\Heide_einsteinBP_calibration4S001R01.dat"]
     # Load data from the folder
-    raw, acquisition_software, speller_info = io.load_eeg_from_folder(data_path=data_dir,
-                                                                      speller_info=speller_info)
+    raw, acquisition_software, speller_info = read.load_eeg_from_folder(data_path=data_dir,
+                                                                        speller_info=speller_info)
 
 
     # In[10]:
@@ -159,8 +153,8 @@ if __name__ == "__main__":
     # In[11]:
 
 
-    output_name = p3k.make_output_folder(filename_s=raw._filenames,
-                                         fig_folder=fig_folder)
+    output_name = offline_analysis.make_output_folder(filename_s=raw._filenames,
+                                                      fig_folder=fig_folder)
 
 
     # #### Detect units for EEG
@@ -171,7 +165,7 @@ if __name__ == "__main__":
 
     # If the variance of the data is >1, it means the data is expressed in microvolts
     # Since MNE uses Volt as a default value, we rescale microvolts to volt
-    raw = p3k.rescale_microvolts_to_volt(raw)
+    raw = offline_analysis.rescale_microvolts_to_volt(raw)
 
 
     # ## Resample
@@ -188,9 +182,9 @@ if __name__ == "__main__":
 
     montage = None  # you can define a specific montage here, otherwise using 10-05 as default
 
-    raw, montage = p3k.define_channels(raw=raw,
-                                       channel_names=cname,
-                                       montage=montage)
+    raw, montage = offline_analysis.define_channels(raw=raw,
+                                                    channel_names=cname,
+                                                    montage=montage)
     raw = raw.set_montage(montage, match_case=False)
 
 
@@ -199,14 +193,14 @@ if __name__ == "__main__":
     # In[15]:
 
 
-    list_art_ch = p3k.detect_artifactual_channels(raw=raw, notch_hz=50)
+    list_art_ch = offline_analysis.detect_artifactual_channels(raw=raw, notch_hz=50)
 
 
     # In[16]:
 
 
     if display_plots.raw:
-        ep_plot = p3k.plot_seconds(raw=raw, seconds=10)
+        ep_plot = offline_analysis.plot_seconds(raw=raw, seconds=10)
 
 
     # rereferencing
@@ -215,8 +209,8 @@ if __name__ == "__main__":
 
 
     if apply_infinite_reference:
-        raw = p3k.apply_infinite_reference(raw=raw,
-                                           display_plot=display_plots.infinite_reference)
+        raw = offline_analysis.apply_infinite_reference(raw=raw,
+                                                        display_plot=display_plots.infinite_reference)
 
 
     # ## Bandpass the signal
@@ -228,7 +222,7 @@ if __name__ == "__main__":
     raw.filter(.5, 40, fir_window='hann', method='iir')
     raw.notch_filter(50)  # removes 50Hz noise
     if display_plots.bandpassed:
-        p3k.plot_seconds(raw=raw, seconds=10)
+        offline_analysis.plot_seconds(raw=raw, seconds=10)
 
 
     # ## Excluding of channels full of artifacts (muscular or disconnecting)
@@ -241,12 +235,12 @@ if __name__ == "__main__":
     reject_channels_full_of_artifacts = True
 
     if reject_channels_full_of_artifacts:
-        rej_ch = p3k.detec_rej_channel(raw=raw,
-                                       threshold_eeg=artifact_threshold,
-                                       reject_ratio=ratio_tolerated_artifacts,
-                                       show_plot=True)
+        rej_ch = offline_analysis.detec_rej_channel(raw=raw,
+                                                    threshold_eeg=artifact_threshold,
+                                                    reject_ratio=ratio_tolerated_artifacts,
+                                                    show_plot=True)
         if rej_ch is not None:
-            p3k.flag_channels_as_bad(rej_ch)
+            offline_analysis.flag_channels_as_bad(rej_ch)
 
 
     # ## Artifact Subspace Reconstruction fitting and reconstruction
@@ -256,11 +250,11 @@ if __name__ == "__main__":
 
     if apply_ASR:
         #!pip install meegkit pymanopt
-        asr_model = p3k.train_asr(raw)
+        asr_model = offline_analysis.train_asr(raw)
 
-        raw = p3k.apply_asr(raw=raw,
-                            asr_model=asr_model,
-                            display_plot=display_plots.asr)
+        raw = offline_analysis.apply_asr(raw=raw,
+                                         asr_model=asr_model,
+                                         display_plot=display_plots.asr)
 
 
     # ### Convert text annotations (i.e. unprocessed events) into events
@@ -274,10 +268,10 @@ if __name__ == "__main__":
 
     # Parse annotations with the follwing mapping
     # non-target=0, target=1, new_trial=10 and stimulus_1=101
-    new_annotations, target_map = p3k.parse_annotations(raw.annotations,
-                                                        speller_info=speller_info,
-                                                        acquisition_software=acquisition_software,
-                                                        stimulus_code_begin=STIMULUS_CODE_BEGIN)
+    new_annotations, target_map = offline_analysis.parse_annotations(raw.annotations,
+                                                                     speller_info=speller_info,
+                                                                     acquisition_software=acquisition_software,
+                                                                     stimulus_code_begin=STIMULUS_CODE_BEGIN)
     raw.set_annotations(new_annotations)
 
 
@@ -326,9 +320,9 @@ if __name__ == "__main__":
     # In[26]:
 
 
-    df_meta = p3k.metadata_from_events(events=all_events,
-                                       speller_info=speller_info,
-                                       stimulus_code_begin=STIMULUS_CODE_BEGIN)
+    df_meta = offline_analysis.metadata_from_events(events=all_events,
+                                                    speller_info=speller_info,
+                                                    stimulus_code_begin=STIMULUS_CODE_BEGIN)
 
 
     df_meta
@@ -421,7 +415,7 @@ if __name__ == "__main__":
 
 
     if display_plots.butterfly_topomap:
-        p3k.plot_butterfly_topomap(epochs=epochs)
+        offline_analysis.plot_butterfly_topomap(epochs=epochs)
 
 
     # ### Target vs NonTarget Erps per channel
@@ -430,7 +424,7 @@ if __name__ == "__main__":
 
 
     if display_plots.channel_average:
-        fig = p3k.plot_channel_average(epochs=epochs)
+        fig = offline_analysis.plot_channel_average(epochs=epochs)
 
     if export_figures:
         out_name = os.path.join(fig_folder, output_name + '_ERPs')
@@ -443,7 +437,7 @@ if __name__ == "__main__":
 
 
     if display_plots.erp_heatmap:
-        p3k.plot_erp_heatmaps(epochs=epochs)
+        offline_analysis.plot_erp_heatmaps(epochs=epochs)
 
 
     # ### Same plot but channel wise
@@ -452,7 +446,7 @@ if __name__ == "__main__":
 
 
     if display_plots.erp_heatmap_channelwise:
-        p3k.plot_erp_heatmaps_channelwise(epochs=epochs, csd_applied=apply_CSD)
+        offline_analysis.plot_erp_heatmaps_channelwise(epochs=epochs, csd_applied=apply_CSD)
 
 
     # # Classical LDA training
@@ -478,9 +472,9 @@ if __name__ == "__main__":
     # In[36]:
 
 
-    fig_conf, fig_roc = p3k.run_single_epoch_LDA_analysis(X_data=epochs_resampled._data,
-                                          y_true_labels=epochs_resampled.events[:, 2],
-                                          nb_k_fold=nb_cross_fold)
+    fig_conf, fig_roc = offline_analysis.run_single_epoch_LDA_analysis(X_data=epochs_resampled._data,
+                                                                       y_true_labels=epochs_resampled.events[:, 2],
+                                                                       nb_k_fold=nb_cross_fold)
 
     if export_figures:
         out_name = os.path.join(fig_folder, output_name + '_confidence_matrix')
@@ -500,9 +494,9 @@ if __name__ == "__main__":
 
     rsq = None
     if display_plots.signed_r_square:
-        rsq, fig_rsq = p3k.signed_r_square(epochs=epochs,
-                                      time_epoch=time_epoch,
-                                      display_rsq_plot=display_plots.signed_r_square)
+        rsq, fig_rsq = offline_analysis.signed_r_square(epochs=epochs,
+                                                        time_epoch=time_epoch,
+                                                        display_rsq_plot=display_plots.signed_r_square)
         if export_figures:
             out_name = os.path.join(fig_folder, output_name + '_heatmap')
             fig_rsq.savefig(out_name, dpi=300, facecolor='w', edgecolor='w', bbox_inches='tight')
@@ -515,10 +509,9 @@ if __name__ == "__main__":
 
 
     import importlib
-    from p3k import openvibe
 
-    importlib.reload(p3k)
-    importlib.reload(p3k.openvibe)
+    importlib.reload(offline_analysis)
+    importlib.reload(offline_analysis.bci_softwares.openvibe)
     #all_events.shape
 
 
@@ -535,7 +528,7 @@ if __name__ == "__main__":
         #picks = [f'eeg{n}' for n in range(10, 15)]
         #evokeds = dict(NonTarget=list(epochs['NonTarget'].iter_evoked()),
         #               Target=list(epochs['Target'].iter_evoked()))
-        axs = p3k.plot_average_erp(epochs=epochs, picks=display_channel_erp)
+        axs = offline_analysis.plot_average_erp(epochs=epochs, picks=display_channel_erp)
 
         if export_figures:
             out_name = os.path.join(fig_folder, output_name + '_best_channel')
@@ -585,9 +578,9 @@ if __name__ == "__main__":
     # In[42]:
 
 
-    score_table = p3oddball.run_p300_LDA_analysis(epochs=epochs_resampled,
-                                                  nb_k_fold= nb_cross_fold,
-                                                  speller_info=speller_info)
+    score_table = lda_p3oddball.run_p300_LDA_analysis(epochs=epochs_resampled,
+                                                      nb_k_fold= nb_cross_fold,
+                                                      speller_info=speller_info)
     import numpy as np
 
 
