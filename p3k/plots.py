@@ -1,4 +1,12 @@
 import mne
+import sklearn
+import numpy as np
+from matplotlib import pyplot as plt
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+
+from p3k import epoching
+from sklearn.metrics import roc_curve, RocCurveDisplay, precision_recall_curve, PrecisionRecallDisplay
+
 
 def plot_seconds(raw: mne.io.BaseRaw, seconds: float, title: str = None):
     fig = mne.make_fixed_length_epochs(raw, duration=seconds)[0].plot()
@@ -8,7 +16,7 @@ def plot_seconds(raw: mne.io.BaseRaw, seconds: float, title: str = None):
     return fig
 
 def plot_butterfly(epochs: mne.Epochs):
-    l_target, l_nt = _get_avg_target_nt(epochs=epochs)
+    l_target, l_nt = epoching.get_avg_target_nt(epochs=epochs)
 
     fig, ax = plt.subplots(2, 1)
     ax1 = l_target.plot(spatial_colors=True, axes=ax[0], show=False)
@@ -23,7 +31,7 @@ def plot_butterfly(epochs: mne.Epochs):
 
 
 def plot_topomap(epochs: mne.Epochs):
-    l_target, l_nt = _get_avg_target_nt(epochs=epochs)
+    l_target, l_nt = epoching.get_avg_target_nt(epochs=epochs)
     spec_kw = dict(width_ratios=[1, 1, 1, .15], wspace=0.5,
                    hspace=0.5, height_ratios=[1, 1])
     # hspace=0.5, height_ratios=[1, 2])
@@ -37,7 +45,7 @@ def plot_topomap(epochs: mne.Epochs):
     return fig
 
 def plot_butterfly_topomap(epochs: mne.Epochs):
-    l_target, l_nt = _get_avg_target_nt(epochs=epochs)
+    l_target, l_nt = epoching.get_avg_target_nt(epochs=epochs)
     l_target.plot_joint()
     fig_target = plt.gcf().canvas.set_window_title('Target joint plot')
     l_nt.plot_joint()
@@ -46,7 +54,7 @@ def plot_butterfly_topomap(epochs: mne.Epochs):
 
 
 def plot_average_erp(epochs: mne.Epochs, picks=None):
-    l_target, l_nt = _get_avg_target_nt(epochs=epochs)
+    l_target, l_nt = epoching.get_avg_target_nt(epochs=epochs)
     evokeds = dict(NonTarget=l_nt,
                    Target=l_target)
     # picks = [f'eeg{n}' for n in range(10, 15)]
@@ -124,7 +132,7 @@ def plot_erp_heatmaps_channelwise(epochs: mne.Epochs, csd_applied: bool):
 
         return fig_t, fig_nt
 
-def plot_precision_recall(classifier: sklearn.discriminant_analysis.LinearDiscriminantAnalysis,
+def plot_precision_recall(classifier: LinearDiscriminantAnalysis,
                           X: np.ndarray,
                           y_gt: np.ndarray):
 

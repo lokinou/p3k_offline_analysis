@@ -1,7 +1,17 @@
+import mne
+import re
+from typing import List
+
+
+class ChannelException(Exception):
+    def __init__(self):
+        super(ChannelException, self).__init__()
+
 def flag_channels_as_bad(bad_channels: list, raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
     new_bads = [raw.info['ch_names'][ch] for ch in bad_channels]
     raw.info['bads'].extend(new_bads)
     raw.pick_types(eeg=True)
+
 
 def define_channels(raw: mne.io.BaseRaw,
                     channel_names: List[str],
@@ -22,9 +32,18 @@ def define_channels(raw: mne.io.BaseRaw,
     elif len(channel_names) > len(raw.info['ch_names']):
         print('Number of channels in data (n={}) is lower than the declared channel names {}'.format(
             len(raw.info['ch_names']), channel_names))
-        raise
+        raise ChannelException
     else:
         print('Using user defined channel names: {}'.format(channel_names))
+
+    assert re.match(r'([0-9]+)', channel_names[0]) is None, \
+        f'Channel names invalid: first channel="{channel_names[0]}". ' \
+        f'Please define them manually in param_channels.channels'
+
+    assert re.search(r'(channel)', channel_names[0], flags=re.IGNORECASE) is None, \
+        f'Channel names invalid: first channel="{channel_names[0]}". ' \
+        f'Please define them manually in param_channels.channels'
+
 
     nb_chan = len(raw.info['ch_names'])
     nb_def_ch = len(channel_names)
@@ -51,11 +70,13 @@ def define_channels(raw: mne.io.BaseRaw,
         types.append(t)
 
     type_map = dict(zip(channel_names, types))
-    print(cname_map)
+    #print(cname_map)
     # rename and pick eeg
     raw.rename_channels(cname_map, allow_duplicates=False)
     raw.set_channel_types(type_map)
     raw.pick_types(eeg=True, misc=False)
-    print('Electrode mapping')
 
-    return raw, montage
+    #print('Electrode mapping')
+    raw = raw.set_montage(montage, match_case=False)
+
+    return raw

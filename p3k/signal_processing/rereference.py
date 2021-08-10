@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import mne
 from p3k.plots import plot_seconds
 
@@ -25,3 +26,9 @@ def apply_infinite_reference(raw: mne.io.BaseRaw, display_plot: bool = False,
 
     return raw_rest, sphere, src, forward, fig
 
+@dataclass
+class P300Analysis:
+
+
+    def run(self):
+        pass

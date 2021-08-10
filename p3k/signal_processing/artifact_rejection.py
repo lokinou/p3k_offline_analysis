@@ -1,4 +1,9 @@
-#Apply a variance based channel rejection if artifacts are present >30% of the time
+import mne
+import numpy as np
+import seaborn as sns
+
+
+# Apply a variance based channel rejection if artifacts are present >30% of the time
 def detec_rej_channel(raw, threshold_eeg: float,
                       reject_ratio: float,
                       window_sec=.2,
@@ -18,13 +23,18 @@ def detec_rej_channel(raw, threshold_eeg: float,
     ratios = np.sum(rej, axis=0) / rej.shape[0]
 
     ret = np.argwhere(ratios >= reject_ratio).tolist()
+
+    fig = rel.get_figure()
+    if show_plot:
+        fig.show()
+
     if len(ret) > 0 and len(ret[0]):
-        print('Found {} channels with at least {}% {}s epochs > {} amplitude)'.format(len(ret),
-                                                                                      reject_ratio * 100, window_sec,
-                                                                                      threshold_eeg))
-        return ret[0]
+        print(f'Found {len(ret)} channels with at least {reject_ratio * 100}% {window_sec}s'
+              f' epochs > {threshold_eeg} amplitude)')
+        return ret[0], fig
     else:
-        return None
+        return None, fig
+
 
 def detect_artifactual_channels(raw: mne.io.BaseRaw,
                                 notch_hz: int = 50):

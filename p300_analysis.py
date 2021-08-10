@@ -19,9 +19,9 @@ if __name__ == "__main__":
     import seaborn as sns
     # LDA
 
-    from p3k.read import read
-    from p3k import offline_analysis
-    from p3k.offline_analysis import SpellerInfo, DisplayPlots
+    from p3k.read import read_eeg
+    from p3k import P300Analysis
+    from p3k.P300Analysis import SpellerInfo, DisplayPlots
     from p3k.classification import lda_p3oddball
 
 
@@ -138,8 +138,8 @@ if __name__ == "__main__":
 
     #fn = ["./data_sample/bci2000\Heide_einsteinBP_calibration4S001R01.dat"]
     # Load data from the folder
-    raw, acquisition_software, speller_info = read.load_eeg_from_folder(data_path=data_dir,
-                                                                        speller_info=speller_info)
+    raw, acquisition_software, speller_info = read_eeg.load_eeg_from_folder(data_path=data_dir,
+                                                                            speller_info=speller_info)
 
 
     # In[10]:
@@ -153,8 +153,8 @@ if __name__ == "__main__":
     # In[11]:
 
 
-    output_name = offline_analysis.make_output_folder(filename_s=raw._filenames,
-                                                      fig_folder=fig_folder)
+    output_name = P300Analysis.make_output_folder(filename_s=raw._filenames,
+                                                  fig_folder=fig_folder)
 
 
     # #### Detect units for EEG
@@ -165,7 +165,7 @@ if __name__ == "__main__":
 
     # If the variance of the data is >1, it means the data is expressed in microvolts
     # Since MNE uses Volt as a default value, we rescale microvolts to volt
-    raw = offline_analysis.rescale_microvolts_to_volt(raw)
+    raw = P300Analysis.rescale_microvolts_to_volt(raw)
 
 
     # ## Resample
@@ -182,9 +182,9 @@ if __name__ == "__main__":
 
     montage = None  # you can define a specific montage here, otherwise using 10-05 as default
 
-    raw, montage = offline_analysis.define_channels(raw=raw,
-                                                    channel_names=cname,
-                                                    montage=montage)
+    raw, montage = P300Analysis.define_channels(raw=raw,
+                                                channel_names=cname,
+                                                montage=montage)
     raw = raw.set_montage(montage, match_case=False)
 
 
@@ -193,14 +193,14 @@ if __name__ == "__main__":
     # In[15]:
 
 
-    list_art_ch = offline_analysis.detect_artifactual_channels(raw=raw, notch_hz=50)
+    list_art_ch = P300Analysis.detect_artifactual_channels(raw=raw, notch_hz=50)
 
 
     # In[16]:
 
 
     if display_plots.raw:
-        ep_plot = offline_analysis.plot_seconds(raw=raw, seconds=10)
+        ep_plot = P300Analysis.plot_seconds(raw=raw, seconds=10)
 
 
     # rereferencing
@@ -209,8 +209,8 @@ if __name__ == "__main__":
 
 
     if apply_infinite_reference:
-        raw = offline_analysis.apply_infinite_reference(raw=raw,
-                                                        display_plot=display_plots.infinite_reference)
+        raw = P300Analysis.apply_infinite_reference(raw=raw,
+                                                    display_plot=display_plots.infinite_reference)
 
 
     # ## Bandpass the signal
@@ -222,7 +222,7 @@ if __name__ == "__main__":
     raw.filter(.5, 40, fir_window='hann', method='iir')
     raw.notch_filter(50)  # removes 50Hz noise
     if display_plots.bandpassed:
-        offline_analysis.plot_seconds(raw=raw, seconds=10)
+        P300Analysis.plot_seconds(raw=raw, seconds=10)
 
 
     # ## Excluding of channels full of artifacts (muscular or disconnecting)
@@ -235,12 +235,12 @@ if __name__ == "__main__":
     reject_channels_full_of_artifacts = True
 
     if reject_channels_full_of_artifacts:
-        rej_ch = offline_analysis.detec_rej_channel(raw=raw,
-                                                    threshold_eeg=artifact_threshold,
-                                                    reject_ratio=ratio_tolerated_artifacts,
-                                                    show_plot=True)
+        rej_ch = P300Analysis.detec_rej_channel(raw=raw,
+                                                threshold_eeg=artifact_threshold,
+                                                reject_ratio=ratio_tolerated_artifacts,
+                                                show_plot=True)
         if rej_ch is not None:
-            offline_analysis.flag_channels_as_bad(rej_ch)
+            P300Analysis.flag_channels_as_bad(rej_ch)
 
 
     # ## Artifact Subspace Reconstruction fitting and reconstruction
@@ -250,11 +250,11 @@ if __name__ == "__main__":
 
     if apply_ASR:
         #!pip install meegkit pymanopt
-        asr_model = offline_analysis.train_asr(raw)
+        asr_model = P300Analysis.train_asr(raw)
 
-        raw = offline_analysis.apply_asr(raw=raw,
-                                         asr_model=asr_model,
-                                         display_plot=display_plots.asr)
+        raw = P300Analysis.apply_asr(raw=raw,
+                                     asr_model=asr_model,
+                                     display_plot=display_plots.asr)
 
 
     # ### Convert text annotations (i.e. unprocessed events) into events
@@ -268,10 +268,10 @@ if __name__ == "__main__":
 
     # Parse annotations with the follwing mapping
     # non-target=0, target=1, new_trial=10 and stimulus_1=101
-    new_annotations, target_map = offline_analysis.parse_annotations(raw.annotations,
-                                                                     speller_info=speller_info,
-                                                                     acquisition_software=acquisition_software,
-                                                                     stimulus_code_begin=STIMULUS_CODE_BEGIN)
+    new_annotations, target_map = P300Analysis.parse_annotations(raw.annotations,
+                                                                 speller_info=speller_info,
+                                                                 acquisition_software=acquisition_software,
+                                                                 stimulus_code_begin=STIMULUS_CODE_BEGIN)
     raw.set_annotations(new_annotations)
 
 
@@ -320,9 +320,9 @@ if __name__ == "__main__":
     # In[26]:
 
 
-    df_meta = offline_analysis.metadata_from_events(events=all_events,
-                                                    speller_info=speller_info,
-                                                    stimulus_code_begin=STIMULUS_CODE_BEGIN)
+    df_meta = P300Analysis.metadata_from_events(events=all_events,
+                                                speller_info=speller_info,
+                                                stimulus_code_begin=STIMULUS_CODE_BEGIN)
 
 
     df_meta
@@ -415,7 +415,7 @@ if __name__ == "__main__":
 
 
     if display_plots.butterfly_topomap:
-        offline_analysis.plot_butterfly_topomap(epochs=epochs)
+        P300Analysis.plot_butterfly_topomap(epochs=epochs)
 
 
     # ### Target vs NonTarget Erps per channel
@@ -424,7 +424,7 @@ if __name__ == "__main__":
 
 
     if display_plots.channel_average:
-        fig = offline_analysis.plot_channel_average(epochs=epochs)
+        fig = P300Analysis.plot_channel_average(epochs=epochs)
 
     if export_figures:
         out_name = os.path.join(fig_folder, output_name + '_ERPs')
@@ -437,7 +437,7 @@ if __name__ == "__main__":
 
 
     if display_plots.erp_heatmap:
-        offline_analysis.plot_erp_heatmaps(epochs=epochs)
+        P300Analysis.plot_erp_heatmaps(epochs=epochs)
 
 
     # ### Same plot but channel wise
@@ -446,7 +446,7 @@ if __name__ == "__main__":
 
 
     if display_plots.erp_heatmap_channelwise:
-        offline_analysis.plot_erp_heatmaps_channelwise(epochs=epochs, csd_applied=apply_CSD)
+        P300Analysis.plot_erp_heatmaps_channelwise(epochs=epochs, csd_applied=apply_CSD)
 
 
     # # Classical LDA training
@@ -472,9 +472,9 @@ if __name__ == "__main__":
     # In[36]:
 
 
-    fig_conf, fig_roc = offline_analysis.run_single_epoch_LDA_analysis(X_data=epochs_resampled._data,
-                                                                       y_true_labels=epochs_resampled.events[:, 2],
-                                                                       nb_k_fold=nb_cross_fold)
+    fig_conf, fig_roc = P300Analysis.run_single_epoch_LDA_analysis(X_data=epochs_resampled._data,
+                                                                   y_true_labels=epochs_resampled.events[:, 2],
+                                                                   nb_k_fold=nb_cross_fold)
 
     if export_figures:
         out_name = os.path.join(fig_folder, output_name + '_confidence_matrix')
@@ -494,9 +494,9 @@ if __name__ == "__main__":
 
     rsq = None
     if display_plots.signed_r_square:
-        rsq, fig_rsq = offline_analysis.signed_r_square(epochs=epochs,
-                                                        time_epoch=time_epoch,
-                                                        display_rsq_plot=display_plots.signed_r_square)
+        rsq, fig_rsq = P300Analysis.signed_r_square(epochs=epochs,
+                                                    time_epoch=time_epoch,
+                                                    display_rsq_plot=display_plots.signed_r_square)
         if export_figures:
             out_name = os.path.join(fig_folder, output_name + '_heatmap')
             fig_rsq.savefig(out_name, dpi=300, facecolor='w', edgecolor='w', bbox_inches='tight')
@@ -510,8 +510,8 @@ if __name__ == "__main__":
 
     import importlib
 
-    importlib.reload(offline_analysis)
-    importlib.reload(offline_analysis.bci_softwares.openvibe)
+    importlib.reload(P300Analysis)
+    importlib.reload(P300Analysis.bci_softwares.openvibe)
     #all_events.shape
 
 
@@ -528,7 +528,7 @@ if __name__ == "__main__":
         #picks = [f'eeg{n}' for n in range(10, 15)]
         #evokeds = dict(NonTarget=list(epochs['NonTarget'].iter_evoked()),
         #               Target=list(epochs['Target'].iter_evoked()))
-        axs = offline_analysis.plot_average_erp(epochs=epochs, picks=display_channel_erp)
+        axs = P300Analysis.plot_average_erp(epochs=epochs, picks=display_channel_erp)
 
         if export_figures:
             out_name = os.path.join(fig_folder, output_name + '_best_channel')

@@ -1,15 +1,22 @@
+from p3k.params import SpellerInfo, InternalParameters
+from p3k.read.bci_format import openvibe
+import numpy as np
+import pandas as pd
+import mne
+from typing import List
+
 
 def parse_annotations(annotations:mne.annotations.Annotations,
                       acquisition_software: str,
                       speller_info: SpellerInfo,
-                      stimulus_code_begin=100):
+                      internal_params: InternalParameters):
 
 
     if acquisition_software == "openvibe":
         new_annotations = openvibe.translate_annotations(annotations=annotations,
                                                          nb_rows=speller_info.nb_stimulus_rows,
                                                          nb_columns=speller_info.nb_stimulus_cols,
-                                                         begin_stimuli_code=stimulus_code_begin)
+                                                         begin_stimuli_code=internal_params.STIMULUS_CODE_BEGIN)
     elif acquisition_software == "bci2000":
         new_annotations = annotations.copy()
     else:
@@ -24,7 +31,7 @@ def parse_annotations(annotations:mne.annotations.Annotations,
         an.delete(string_annotations)
     # Extractz row and column labels from stimuli numbers
     stimuli_labels = np.sort(np.unique(
-        an.description[np.where(an.description.astype(np.uint8) >= stimulus_code_begin)]))
+        an.description[np.where(an.description.astype(np.uint8) >= internal_params.STIMULUS_CODE_BEGIN)]))
 
     row_labels = stimuli_labels[:speller_info.nb_stimulus_rows]
     col_labels = stimuli_labels[speller_info.nb_stimulus_rows:
@@ -36,10 +43,8 @@ def parse_annotations(annotations:mne.annotations.Annotations,
     # map the stimuli for MNE to read
     map_stimuli = dict(zip(stimuli_labels, stimuli_labels.astype(np.uint8)))
 
-    #target_map = dict()
-    target_map = TARGET_MAP.copy()
+    target_map = internal_params.TARGET_MAP.copy()
     target_map.update(map_stimuli)
-    #target_map
 
     return new_annotations, target_map
 
@@ -99,7 +104,7 @@ def metadata_from_events(events: List,
 
     return df_meta
 
-def _get_avg_target_nt(epochs: mne.Epochs):
+def get_avg_target_nt(epochs: mne.Epochs):
     l_nt = epochs['NonTarget'].average()
     l_target = epochs['Target'].average()
     return l_target, l_nt
