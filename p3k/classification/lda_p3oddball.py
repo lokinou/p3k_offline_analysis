@@ -8,7 +8,8 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 import p3k
-from p3k.P300Analysis import SpellerInfo, _reshape_mne_raw_for_lda
+from p3k.P300Analysis import SpellerInfo
+from p3k.classification.utils import reshape_mne_raw_for_lda
 
 def extract_target_from_trial(epochs: mne.Epochs, trial_nb: int, stimulus_code_begin: int):
     #epoch_trial = epochs[epochs.metadata['Trial_nb'] == trial_nb]
@@ -141,7 +142,7 @@ def run_p300_LDA_analysis(epochs: mne.epochs,
             'stim']
 
         # reshape data to enter LDA
-        X_train = _reshape_mne_raw_for_lda(X_train)
+        X_train = reshape_mne_raw_for_lda(X_train)
 
         # train the LDA classifier
         clf.fit(X_train, y_train)
@@ -172,7 +173,7 @@ def run_p300_LDA_analysis(epochs: mne.epochs,
                 X_test_rows = epoch_rows[epoch_rows.metadata['Trial_nb'] == trial_nb]._data
                 y_test_rows = epoch_rows[epoch_rows.metadata['Trial_nb'] == trial_nb].metadata['is_target'].astype(np.uint8)
                 y_test_rows_stim = epoch_rows[epoch_rows.metadata['Trial_nb'] == trial_nb].metadata['stim']
-                X_test_rows = _reshape_mne_raw_for_lda(X_test_rows)  # reshape for LDA
+                X_test_rows = reshape_mne_raw_for_lda(X_test_rows)  # reshape for LDA
 
             skip_cols = False
             if np.where(epoch_cols.metadata['is_target'] == 1)[0].size == 0:
@@ -182,10 +183,10 @@ def run_p300_LDA_analysis(epochs: mne.epochs,
                 X_test_cols = epoch_cols[epoch_cols.metadata['Trial_nb'] == trial_nb]._data
                 y_test_cols = epoch_cols[epoch_cols.metadata['Trial_nb'] == trial_nb].metadata['is_target'].astype(np.uint8)
                 y_test_cols_stim = epoch_cols[epoch_cols.metadata['Trial_nb'] == trial_nb].metadata['stim']
-                X_test_cols = _reshape_mne_raw_for_lda(X_test_cols)  # reshape
+                X_test_cols = reshape_mne_raw_for_lda(X_test_cols)  # reshape
 
             # reshape data to enter LDA
-            X_test = _reshape_mne_raw_for_lda(X_test)
+            X_test = reshape_mne_raw_for_lda(X_test)
 
             # predict the targets for rows, (1 to N sequences cumulative X information provided)
             y_pred = clf.predict(X_test)

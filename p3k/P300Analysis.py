@@ -2,14 +2,14 @@ import os
 from pathlib import Path
 from typing import Union, List, Tuple
 
-from params import ParamLDA, ParamInterface, ParamData, ParamEpochs, ParamChannels, InternalParameters, \
+from p3k.params import ParamLDA, ParamInterface, ParamData, ParamEpochs, ParamChannels, InternalParameters, \
     ParamArtifacts, DisplayPlots, SpellerInfo, ParamPreprocessing
 
 from p3k.read import read_eeg
 from p3k import channels
 from p3k.signal_processing import artifact_rejection, rereference, ASR
 from p3k import plots
-import epoching
+from p3k import epoching
 
 
 def _make_output_folder(filename_s: Union[str, List[str]], fig_folder: str) -> str:
@@ -81,6 +81,15 @@ def run_analysis(param_channels: ParamChannels = None,
     raw = channels.define_channels(raw=raw,
                                    channel_names=param_channels.cname,
                                    montage=None)
+    import mne
+    # Channel subsetting
+    print(f"todo: select a subset of channels select_subset")
+    if ParamChannels.select_subset is not None:
+        intersects = True  # all subset found in the channel list
+        assert intersects, "todo verification"
+        raw.pick_channels(ch_names=ParamChannels.select_subset)
+        #print(f"selected {ParamChannels.select_subset}")
+        pass
 
     # display signal before any preprocessing
     if display_plots.raw:

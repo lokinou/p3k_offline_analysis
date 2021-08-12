@@ -4,7 +4,8 @@ from typing import Union, List, Tuple
 
 @dataclass
 class ParamChannels:
-    cname: List[int] = None
+    cname: List[str] = None
+    select_subset: List[str] = None
 
 
 @dataclass
@@ -50,7 +51,8 @@ class ParamArtifacts:
 @dataclass
 class ParamLDA:
     resample_LDA: int = 32
-    nb_cross_fold: int = 1
+    nb_cross_fold: int = 5
+
 
 
 @dataclass

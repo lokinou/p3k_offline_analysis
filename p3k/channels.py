@@ -5,7 +5,7 @@ from typing import List
 
 class ChannelException(Exception):
     def __init__(self):
-        super(ChannelException, self).__init__()
+        super().__init__()
 
 def flag_channels_as_bad(bad_channels: list, raw: mne.io.BaseRaw) -> mne.io.BaseRaw:
     new_bads = [raw.info['ch_names'][ch] for ch in bad_channels]

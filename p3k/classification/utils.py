@@ -1,6 +1,6 @@
 import numpy as np
 
-def _reshape_mne_raw_for_lda(X: np.ndarray, verbose=False) -> np.ndarray:
+def reshape_mne_raw_for_lda(X: np.ndarray, verbose=False) -> np.ndarray:
     """
     reshapes raw data for LDA, flattening the last dimension
     """

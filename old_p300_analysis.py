@@ -139,7 +139,8 @@ if __name__ == "__main__":
     #fn = ["./data_sample/bci2000\Heide_einsteinBP_calibration4S001R01.dat"]
     # Load data from the folder
     raw, acquisition_software, speller_info = read_eeg.load_eeg_from_folder(data_path=data_dir,
-                                                                            speller_info=speller_info)
+                                                                            speller_info=speller_info,
+                                                                            begin_stimuli_code=)
 
 
     # In[10]:
