@@ -84,10 +84,11 @@ def run_analysis(param_channels: ParamChannels = None,
     import mne
     # Channel subsetting
     print(f"todo: select a subset of channels select_subset")
-    if ParamChannels.select_subset is not None:
-        intersects = True  # all subset found in the channel list
-        assert intersects, "todo verification"
-        raw.pick_channels(ch_names=ParamChannels.select_subset)
+    if param_channels.select_subset is not None:
+        print(f"selecting {param_channels.select_subset}")
+        #intersects = True  # all subset found in the channel list
+        #assert intersects, "todo verification"
+        raw = raw.pick_channels(ch_names=param_channels.select_subset)
         #print(f"selected {ParamChannels.select_subset}")
         pass
 
@@ -146,6 +147,7 @@ if __name__ == "__main__":
     param_channels = ParamChannels(cname=['Fz', 'FC1', 'FC2', 'C1', 'Cz', 'C2',
                                           'P3', 'Pz', 'P4', 'Oz'])
     param_channels = ParamChannels(cname=['Fz', 'Cz', 'P3', 'Pz', 'P4', 'PO7', 'PO8', 'Oz'])
+                                   #select_subset=['Fz', 'Cz', 'P3'])
 
     # Run the analysis with the parameters
     run_analysis(param_channels=param_channels)
