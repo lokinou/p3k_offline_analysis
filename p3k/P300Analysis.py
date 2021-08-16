@@ -1,15 +1,19 @@
 import os
 from pathlib import Path
-from typing import Union, List, Tuple
+from typing import Union, List
 
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+
+from p3k import channels
+from p3k import epoching
+from p3k import plots
+from p3k.classification import lda_p3oddball
 from p3k.params import ParamLDA, ParamInterface, ParamData, ParamEpochs, ParamChannels, InternalParameters, \
     ParamArtifacts, DisplayPlots, SpellerInfo, ParamPreprocessing
-
 from p3k.read import read_eeg
-from p3k import channels
 from p3k.signal_processing import artifact_rejection, rereference, ASR
-from p3k import plots
-from p3k import epoching
 
 
 def _make_output_folder(filename_s: Union[str, List[str]], fig_folder: str) -> str:
@@ -88,8 +92,18 @@ def run_analysis(param_channels: ParamChannels = None,
         intersects = True  # all subset found in the channel list
         assert intersects, "todo verification"
         raw.pick_channels(ch_names=ParamChannels.select_subset)
-        #print(f"selected {ParamChannels.select_subset}")
+        # print(f"selected {ParamChannels.select_subset}")
         pass
+
+    if display_plots.montage_plots:
+        raw.plot_sensors(show_names=True)
+        fig = raw.plot_sensors('3d')
+
+    # Display cross correlation plots
+    if display_plots.cross_correlation:
+        m = np.corrcoef(raw._data)
+        fig = plt.figure()
+        hm = sns.heatmap(m, linewidths=0, cmap="YlGnBu").set(title='Cross correlation')
 
     # display signal before any preprocessing
     if display_plots.raw:
@@ -126,20 +140,116 @@ def run_analysis(param_channels: ParamChannels = None,
 
     # Apply artifact subspace reconstruction
     if param_preproc.apply_ASR:
-        #!pip install meegkit pymanopt
+        # !pip install meegkit pymanopt
         asr_model = ASR.train_asr(raw)
 
         raw = ASR.apply_asr(raw=raw,
                             asr_model=asr_model,
                             display_plot=display_plots.asr)
 
-
     # Parse and convert the annotations to generate stimuli metadata
     new_annotations, target_map = epoching.parse_annotations(raw.annotations,
-                                                        speller_info=speller_info,
-                                                        acquisition_software=acquisition_software,
-                                                        internal_params=internal_params)
+                                                             speller_info=speller_info,
+                                                             acquisition_software=acquisition_software,
+                                                             internal_params=internal_params)
     raw.set_annotations(new_annotations)
+
+    # Convert annotations to events
+    all_events, event_id = mne.events_from_annotations(raw, event_id=target_map)
+    print("Found {} events".format(len(all_events[:])))
+
+    ### Prepare metadata to annotate events
+    # When making target and non-target epochs, we need to conserve stimulus related information.
+    # (trial number, stimulus number, column and row information)
+    # Metadata is a pandas dataframe with as many rows as there are events, and describes events signal on its columns
+    # Display montage
+    df_meta = epoching.metadata_from_events(events=all_events,
+                                            speller_info=speller_info,
+                                            stimulus_code_begin=internal_params.STIMULUS_CODE_BEGIN)
+
+    ### Make epochs
+    # Note that the epochs are created based on events. Epochs info is stored in metadata.
+
+    # We only select targets and non targets, those should match exactly with stimuli annotations made in metadata
+    events = mne.pick_events(all_events, [0, 1])
+
+    # make epochs
+    epochs = mne.Epochs(raw, events, baseline=param_epochs.time_baseline,
+                        event_id=internal_params.EVENT_IDS,
+                        tmin=param_epochs.time_epoch[0], tmax=param_epochs.time_epoch[1],
+                        event_repeated='drop', picks=['eeg', 'csd'],
+                        preload=True,
+                        metadata=df_meta)
+
+    if True or display_plots.epochs:
+        fig = epochs[0:5].plot(title='displaying 5 first epochs')
+
+    ### Epoch rejection
+    # Channels should be filtered out before epochs because any faulty channel would cause every epoch to be discarded
+    if param_artifacts.reject_artifactual_epochs:
+        reject_criteria = dict(eeg=param_artifacts.artifact_threshold)  # 100 µV  #eog=200e-6)
+        _ = epochs.drop_bad(reject=reject_criteria)
+        if display_plots.reject_epochs:
+            epochs.plot_drop_log()
+
+    ## Apply current source density
+    if param_preproc.apply_CSD:
+        print("Applying CSD")
+        epochs_csd = mne.preprocessing.compute_current_source_density(epochs)
+        epochs = epochs_csd
+        if display_plots.csd:
+            fig = epochs_csd[0:5].plot(title='Current_source_density on 5 first epochs')
+
+    ### Epochs aggregation and display
+    # Classwise butterfly with topomap
+    if display_plots.butterfly_topomap:
+        plots.plot_butterfly_topomap(epochs=epochs)
+
+    # classwise averages
+    if display_plots.channel_average:
+        fig = plots.plot_channel_average(epochs=epochs)
+        if param_interface.export_figures:
+            out_name = os.path.join(param_interface.export_figures_path, output_name + '_ERPs')
+            fig.savefig(out_name, dpi=300, facecolor='w', edgecolor='w', bbox_inches='tight')
+
+    # single trial heatmaps
+    if display_plots.erp_heatmap:
+        plots.plot_erp_heatmaps(epochs=epochs)
+
+    # channelwise heatmaps
+    if display_plots.erp_heatmap_channelwise:
+        plots.plot_erp_heatmaps_channelwise(epochs=epochs,
+                                            csd_applied=param_preproc.apply_CSD)
+
+    ### Classification LDA
+    # resample for faster lda
+    new_fs = param_lda.resample_LDA  #
+    epochs_resampled = epochs.copy().resample(new_fs)
+    print('resampling to {}Hz'.format(new_fs))
+
+    cum_score_table = lda_p3oddball.run_p300_LDA_analysis(epochs=epochs_resampled,
+                                                          nb_k_fold=param_lda.nb_cross_fold,
+                                                          speller_info=speller_info)
+
+    ## Prediction results in table
+    # **fold**: k-fold\
+    # **fold_trial**: index of trial contained in the fold\
+    # **n_seq**: number of sequences selecting epoch for predictions\
+    # **score**: LDA score (target vs non-target detection). Classes are unbalanced so the score is misleading\
+    # **AUC**: LDA Area Under the Curve. Estimation of the performance of the classifier\
+    # **row/col_pred/true**: row and columns target and predicted\
+    # **correct**: the predicted row **AND** column is correctly predicted
+    if display_plots.offline_accuracy:
+        fig_score = lda_p3oddball.plot_cum_score_table(table=cum_score_table,
+                                                       nb_cross_fold=param_lda.nb_cross_fold)
+        if param_interface.export_figures:
+            out_name = os.path.join(param_interface.export_figures_path,
+                                    output_name + '_accuracy')
+            fig_score.savefig(out_name, dpi=300, facecolor='w', edgecolor='w', bbox_inches='tight')
+
+    print(f"Number of ERP targets={epochs['Target']._data.shape[0]},"
+          f" non-targets={epochs['NonTarget']._data.shape[0]}")
+
 
 if __name__ == "__main__":
     # Define the study parameters

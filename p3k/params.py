@@ -78,6 +78,7 @@ class DisplayPlots:
     infinite_reference: bool = False
     bandpassed: bool = False
     asr: bool = True
+    montage_plots: bool = False
     csd: bool = False
     cross_correlation: bool = False
     epochs: bool = True

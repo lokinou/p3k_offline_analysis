@@ -8,7 +8,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 import p3k
-from p3k.P300Analysis import SpellerInfo
+from p3k.params import SpellerInfo
 from p3k.classification.utils import reshape_mne_raw_for_lda
 
 def extract_target_from_trial(epochs: mne.Epochs, trial_nb: int, stimulus_code_begin: int):
@@ -286,7 +286,8 @@ def run_p300_LDA_analysis(epochs: mne.epochs,
 
 
 def plot_cum_score_table(table: pd.DataFrame,
-                         nb_cross_fold: int):
+                         nb_cross_fold: int,
+                         show=True):
     df_seq = table.groupby(['n_seq']).mean()
     df_seq = df_seq.rename(columns={"correct": "Accuracy", "score": "epoch_score", "AUC": "epoch_AUC"})
     df_seq[['Accuracy', 'epoch_score', 'epoch_AUC']]
@@ -298,5 +299,6 @@ def plot_cum_score_table(table: pd.DataFrame,
     plt.ylabel('Accuracy')
     plt.legend(['P300 target prediction (row x col)'])
     # export the figure
-
+    if show:
+        plt.show()
     return ax.figure
