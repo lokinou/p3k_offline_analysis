@@ -24,7 +24,7 @@ class ParamEpochs:
     time_epoch: Tuple[float] = (-.200, .600)
     time_baseline: Tuple[float] = (-.200, 0)
 
-
+@dataclass
 class ParamData:
     data_dir: str = r"./data_sample"
     acquisition_software = None  # bci2000 or openvibe or None for autodetection
@@ -92,3 +92,5 @@ class DisplayPlots:
     signed_r_square: bool = True
     best_channel_erp: bool = True
     offline_accuracy: bool = True
+    score_table: bool = True
+

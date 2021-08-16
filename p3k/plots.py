@@ -7,6 +7,9 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from p3k import epoching
 from sklearn.metrics import roc_curve, RocCurveDisplay, precision_recall_curve, PrecisionRecallDisplay
 
+from bokeh.io import export_png, export_svgs
+from bokeh.models import ColumnDataSource, DataTable, TableColumn
+
 
 def plot_seconds(raw: mne.io.BaseRaw, seconds: float, title: str = None):
     fig = mne.make_fixed_length_epochs(raw, duration=seconds)[0].plot()
@@ -157,3 +160,19 @@ def plot_precision_recall(classifier: LinearDiscriminantAnalysis,
 
     plt.show()
     return fig
+
+
+
+def save_df_as_image(df, path: str = None):
+    source = ColumnDataSource(df)
+    df_columns = [df.index.name]
+    df_columns.extend(df.columns.values)
+    columns_for_table=[]
+    if df_columns[0] is None:
+        df_columns[0] = 'idx'
+    for column in df_columns:
+        columns_for_table.append(TableColumn(field=column, title=column))
+
+    data_table = DataTable(source=source, columns=columns_for_table,height_policy="auto",width_policy="auto",index_position=None)
+    if path is not None:
+        export_png(data_table, filename = path)

@@ -5,6 +5,7 @@ from typing import Union, List
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+import mne
 
 from p3k import channels
 from p3k import epoching
@@ -70,6 +71,10 @@ def run_analysis(param_channels: ParamChannels = None,
         read_eeg.load_eeg_from_folder(data_path=param_data.data_dir,
                                       begin_stimuli_code=internal_params.STIMULUS_CODE_BEGIN,
                                       speller_info=speller_info)
+
+    if acquisition_software == "openvibe":
+        assert speller_info.nb_seq is not None, f'If using openvibe data, please define the ' \
+                                                f'speller_info = SpellerInfo(<params>) before running '
 
     # update the detected bci software that generated data
     param_data.acquisition_software = acquisition_software
@@ -214,11 +219,12 @@ def run_analysis(param_channels: ParamChannels = None,
 
     ### Classification LDA
     # resample for faster lda
-    new_fs = param_lda.resample_LDA  #
-    epochs_resampled = epochs.copy().resample(new_fs)
-    print('resampling to {}Hz'.format(new_fs))
+    if param_lda.resample_LDA is not None:
+        new_fs = param_lda.resample_LDA  #
+        epochs = epochs.copy().resample(new_fs)
+        print('resampling to {}Hz'.format(new_fs))
 
-    cum_score_table = lda_p3oddball.run_p300_LDA_analysis(epochs=epochs_resampled,
+    cum_score_table = lda_p3oddball.run_p300_LDA_analysis(epochs=epochs,
                                                           nb_k_fold=param_lda.nb_cross_fold,
                                                           speller_info=speller_info)
 
@@ -241,12 +247,28 @@ def run_analysis(param_channels: ParamChannels = None,
     print(f"Number of ERP targets={epochs['Target']._data.shape[0]},"
           f" non-targets={epochs['NonTarget']._data.shape[0]}")
 
+    # save the table
+    if False and display_plots.score_table:
+        out_name = os.path.join(param_interface.export_figures_path,
+                                output_name + '_score_table')
+
+        if param_interface.export_figures:
+            plots.save_df_as_image(cum_score_table, path=out_name)
+        else:
+            plots.save_df_as_image(cum_score_table, path=None)
+
 
 if __name__ == "__main__":
     # Define the study parameters
     param_channels = ParamChannels(cname=['Fz', 'FC1', 'FC2', 'C1', 'Cz', 'C2',
                                           'P3', 'Pz', 'P4', 'Oz'])
-    param_channels = ParamChannels(cname=['Fz', 'Cz', 'P3', 'Pz', 'P4', 'PO7', 'PO8', 'Oz'])
+    #param_channels = ParamChannels(cname=['Fz', 'Cz', 'P3', 'Pz', 'P4', 'PO7', 'PO8', 'Oz'])
+
+    speller_info = SpellerInfo(nb_stimulus_rows=7, nb_stimulus_cols=7, nb_seq=10)
+
+    param_lda = ParamLDA(resample_LDA=64)
 
     # Run the analysis with the parameters
-    run_analysis(param_channels=param_channels)
+    run_analysis(param_channels=param_channels,
+                 param_lda=param_lda,
+                 speller_info=speller_info)
