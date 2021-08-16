@@ -5,6 +5,7 @@ import mne
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from typing import Tuple, List
 
 raws = []
 
@@ -125,9 +126,13 @@ def extract_annotations(filename, begin_stimuli_code: int, verbose=False):
     return annotations
 
 
-def load_bci2k(filename_list, begin_stimuli_code: int, verbose=False):
+def load_bci2k(filename_list, begin_stimuli_code: int = 0, verbose=False) -> Tuple[List[mne.io.RawArray], Tuple[int]]:
     """
     return MNE raw, number of rows in the matrix
+    :param filename_list: list of filenames to load and concatenate
+    :param begin_stimuli_code: Integer added to the stimuli code
+    :param verbose:
+    :return: (list of mne raw arrays, (number of rows, columns sequences))
     """
     raws = []
     for fn in filename_list:
