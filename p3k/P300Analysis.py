@@ -88,11 +88,13 @@ def run_analysis(param_channels: ParamChannels = None,
     import mne
     # Channel subsetting
     print(f"todo: select a subset of channels select_subset")
+==== BASE ====
     if ParamChannels.select_subset is not None:
         intersects = True  # all subset found in the channel list
         assert intersects, "todo verification"
         raw.pick_channels(ch_names=ParamChannels.select_subset)
-        # print(f"selected {ParamChannels.select_subset}")
+        #print(f"selected {ParamChannels.select_subset}")
+==== BASE ====
         pass
 
     if display_plots.montage_plots:
