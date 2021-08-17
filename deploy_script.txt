@@ -2,3 +2,5 @@
 python setup.py build bdist bdist_wheel
 
 # upload to PyPI
+cd dist
+twine upload *
