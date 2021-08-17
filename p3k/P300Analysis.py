@@ -12,10 +12,9 @@ from p3k import epoching
 from p3k import plots
 from p3k.classification import lda_p3oddball
 from p3k.params import ParamLDA, ParamInterface, ParamData, ParamEpochs, ParamChannels, InternalParameters, \
-    ParamArtifacts, DisplayPlots, SpellerInfo, ParamPreprocessing
+    ParamArtifacts, DisplayPlots, SpellerInfo, ParamPreprocessing, SampleParams
 from p3k.read import read_eeg
-from p3k.signal_processing import artifact_rejection, rereference, ASR
-
+from p3k.signal_processing import artifact_rejection, rereference
 
 def _make_output_folder(filename_s: Union[str, List[str]], fig_folder: str) -> str:
     if isinstance(filename_s, list):
@@ -44,6 +43,8 @@ def run_analysis(param_channels: ParamChannels = None,
                  param_data: ParamData = None,
                  param_epochs: ParamEpochs = None,
                  internal_params: InternalParameters = None):
+
+
     if param_channels is None:
         param_channels = ParamChannels()
     if param_preproc is None:
@@ -60,10 +61,27 @@ def run_analysis(param_channels: ParamChannels = None,
         param_lda = ParamLDA()
     if param_interface is None:
         param_interface = ParamInterface()
-    if param_data is None:
-        param_data = ParamData()
     if param_epochs is None:
         param_epochs = ParamEpochs()
+
+    # Checking whether a data folder was provided
+    if param_data is None:
+        default_p = SampleParams()
+        print(f"!!! WARNING !!! No data folder was specified, "
+              f"using the sample file with following parameters {default_p}")
+        # apply those parameters
+        param_data = ParamData()
+        param_data.data_dir = default_p.data_dir
+        speller_info = default_p.speller_info
+        param_channels.cname = default_p.channels
+    else:
+        param_data = ParamData()
+
+
+
+    # Do not import ASR if not used
+    if param_preproc.apply_ASR:
+        from p3k.signal_processing import ASR
 
     ## Read the EEG from files
 
@@ -259,16 +277,5 @@ def run_analysis(param_channels: ParamChannels = None,
 
 
 if __name__ == "__main__":
-    # Define the study parameters
-    param_channels = ParamChannels(cname=['Fz', 'FC1', 'FC2', 'C1', 'Cz', 'C2',
-                                          'P3', 'Pz', 'P4', 'Oz'])
-    #param_channels = ParamChannels(cname=['Fz', 'Cz', 'P3', 'Pz', 'P4', 'PO7', 'PO8', 'Oz'])
-
-    speller_info = SpellerInfo(nb_stimulus_rows=7, nb_stimulus_cols=7, nb_seq=10)
-
-    param_lda = ParamLDA(resample_LDA=64)
-
-    # Run the analysis with the parameters
-    run_analysis(param_channels=param_channels,
-                 param_lda=param_lda,
-                 speller_info=speller_info)
+    # test using sample data
+    run_analysis()

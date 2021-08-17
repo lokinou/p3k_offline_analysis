@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.3'
+VERSION = '0.1.0'
 DESCRIPTION = 'p3k - yet another P300 offline classification tool'
 LONG_DESCRIPTION = 'P300 offline classification from BCI2000 P3Speller and OpenVibe P300 scenario'
 
@@ -14,8 +14,8 @@ setup(
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     packages=find_packages(),
-    install_requires=['sklearn', 'pandas', 'seaborn', 'numpy', 'mne', 'matplotlib', 'BCI2kReader', 'statsmodels', 'pyriemann',
-	'meegkit @ git+https://github.com/nbara/python-meegkit.git#egg=meegkit[extra]'],
+    install_requires=['sklearn', 'pandas', 'seaborn', 'numpy', 'mne', 'matplotlib', 'BCI2kReader'], #
+	#'meegkit @ git+https://github.com/nbara/python-meegkit.git#egg=meegkit[extra]'],
 	#dependency_links=['git+https://github.com/nbara/python-meegkit.git#egg=meegkit'],
 	python_requires='>3.8.1',
 	

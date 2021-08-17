@@ -1,0 +1,4 @@
+# install the executables
+python setup.py build bdist bdist_wheel
+
+# upload to PyPI
