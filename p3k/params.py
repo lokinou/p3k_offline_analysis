@@ -33,8 +33,8 @@ class ParamData:
 class ParamPreprocessing:
     resample_freq: int = None
     apply_resample: bool = field(init=False, default=False)
-    apply_infinite_reference = False  # re-referencing
-    apply_ASR = True  # use Artifact Subspace Reconstruction (artifact removal)
+    apply_infinite_reference = True  # re-referencing
+    apply_ASR = False  # use Artifact Subspace Reconstruction (artifact removal)
     apply_CSD = False  # use Current Source Density (spatial filter)
 
     def __post_init__(self):

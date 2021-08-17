@@ -7,9 +7,6 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from p3k import epoching
 from sklearn.metrics import roc_curve, RocCurveDisplay, precision_recall_curve, PrecisionRecallDisplay
 
-from bokeh.io import export_png, export_svgs
-from bokeh.models import ColumnDataSource, DataTable, TableColumn
-
 
 def plot_seconds(raw: mne.io.BaseRaw, seconds: float, title: str = None):
     fig = mne.make_fixed_length_epochs(raw, duration=seconds)[0].plot()

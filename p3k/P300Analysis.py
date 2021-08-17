@@ -5,6 +5,7 @@ from typing import Union, List
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+import pandas as pd
 import mne
 
 from p3k import channels
@@ -266,15 +267,26 @@ def run_analysis(param_channels: ParamChannels = None,
           f" non-targets={epochs['NonTarget']._data.shape[0]}")
 
     # save the table
-    if False and display_plots.score_table:
+    if display_plots.score_table:
         out_name = os.path.join(param_interface.export_figures_path,
-                                output_name + '_score_table')
+                                output_name + '_score_table.txt')
 
-        if param_interface.export_figures:
-            plots.save_df_as_image(cum_score_table, path=out_name)
-        else:
-            plots.save_df_as_image(cum_score_table, path=None)
-
+        print(cum_score_table)
+        with open(file=out_name, mode='w') as fi:
+            # Disable pandas limitations
+            bak_max_rows = pd.options.display.max_rows
+            bak_max_columns = pd.options.display.max_columns
+            bak_width = pd.options.display.width
+            pd.set_option('display.max_rows', None)
+            pd.set_option('display.max_columns', None)
+            pd.set_option('display.width', None)
+            # save to file
+            fi.write(cum_score_table.__str__())
+            # Restore Pandas limitations
+            pd.set_option('display.max_rows', bak_max_rows)
+            pd.set_option('display.max_columns', bak_max_columns)
+            pd.set_option('display.width', bak_width)
+            print(f"saved to file {out_name}")
 
 if __name__ == "__main__":
     # test using sample data

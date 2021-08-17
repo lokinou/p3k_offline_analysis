@@ -23,7 +23,8 @@ def apply_infinite_reference(raw: mne.io.BaseRaw, display_plot: bool = False,
             # make room for title
             fig.subplots_adjust(top=0.9)
             fig.suptitle('{} reference'.format(title), size='xx-large', weight='bold')
-
+    else:
+        fig = None
     return raw_rest, sphere, src, forward, fig
 
 @dataclass
