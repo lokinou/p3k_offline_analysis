@@ -15,8 +15,8 @@ class InternalParameters:
     EVENT_IDS: dict = field(init=True, default_factory=dict)
 
     def __post_init__(self):
-        self.TARGET_MAP = {'0': 0, '1': 1, '10': 10}
-        self.EVENT_IDS = {'NonTarget': 0, 'Target': 1}
+       self.TARGET_MAP = {'0': 0, '1': 1, '10': 10}
+       self.EVENT_IDS = {'NonTarget': 0, 'Target': 1}
 
 
 @dataclass
@@ -24,18 +24,22 @@ class ParamEpochs:
     time_epoch: Tuple[float] = (-.200, .600)
     time_baseline: Tuple[float] = (-.200, 0)
 
+
 @dataclass
 class ParamData:
     data_dir: str = None
     acquisition_software = None  # bci2000 or openvibe or None for autodetection
 
+
 @dataclass
 class ParamPreprocessing:
     resample_freq: int = None
+    bandpass: tuple = (.5, 40)
+    notch: int = 50
     apply_resample: bool = field(init=False, default=False)
-    apply_infinite_reference = True  # re-referencing
-    apply_ASR = False  # use Artifact Subspace Reconstruction (artifact removal)
-    apply_CSD = False  # use Current Source Density (spatial filter)
+    apply_infinite_reference: bool = True  # re-referencing
+    apply_ASR: bool = False  # use Artifact Subspace Reconstruction (artifact removal)
+    apply_CSD: bool = False  # use Current Source Density (spatial filter)
 
     def __post_init__(self):
         self.apply_resample = self.resample_freq is not None
@@ -52,7 +56,6 @@ class ParamArtifacts:
 class ParamLDA:
     resample_LDA: int = 64
     nb_cross_fold: int = 5
-
 
 
 @dataclass
@@ -85,7 +88,7 @@ class DisplayPlots:
     channel_artifacts = True
     reject_epochs: bool = True
     butterfly: bool = False
-    butterfly_topomap: bool = True
+    butterfly_topomap: bool = False
     channel_average: bool = True
     erp_heatmap: bool = False
     erp_heatmap_channelwise: bool = False
@@ -93,6 +96,7 @@ class DisplayPlots:
     best_channel_erp: bool = True
     offline_accuracy: bool = True
     score_table: bool = True
+
 
 @dataclass
 class SampleParams:

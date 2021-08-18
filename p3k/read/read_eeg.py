@@ -12,7 +12,7 @@ def load_eeg_from_folder(data_path: str,
                          rescale_to_volt: bool = True,
                          fix_openvibe_annotations: bool = True) -> Tuple[mne.io.BaseRaw, str, SpellerInfo]:
     nb_stimlus_rows = None  # stores the number of rows in the P300 to separate rows and columns
-    os.path.exists(data_path)
+    assert os.path.exists(data_path), f"The folder containing data does not exist {data_path}"
     fnames = []
     print(f"Current path. {os.path.abspath(os.curdir)}")
     for file in os.listdir(data_path):

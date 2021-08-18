@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import mne
 from p3k.plots import plot_seconds
 
-def apply_infinite_reference(raw: mne.io.BaseRaw, display_plot: bool = False,
+def apply_infinity_reference(raw: mne.io.BaseRaw, display_plot: bool = False,
                              sphere=None, src=None, forward=None) -> mne.io.BaseRaw:
 
     raw.del_proj()  # remove our average reference projector first

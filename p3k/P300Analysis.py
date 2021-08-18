@@ -75,8 +75,6 @@ def run_analysis(param_channels: ParamChannels = None,
         param_data.data_dir = default_p.data_dir
         speller_info = default_p.speller_info
         param_channels.cname = default_p.channels
-    else:
-        param_data = ParamData()
 
 
 
@@ -135,12 +133,12 @@ def run_analysis(param_channels: ParamChannels = None,
 
     # Re-referencing to infinite reference
     if param_preproc.apply_infinite_reference:
-        raw, _, _, _, _ = rereference.apply_infinite_reference(raw=raw,
+        raw, _, _, _, _ = rereference.apply_infinity_reference(raw=raw,
                                                                display_plot=display_plots.infinite_reference)
 
     # Bandpass filtering
-    raw.filter(.5, 40, fir_window='hann', method='iir')
-    raw.notch_filter(50)  # removes 50Hz noise
+    raw = raw.filter(param_preproc.bandpass[0], param_preproc.bandpass[1], fir_window='hann', method='iir')
+    raw = raw.notch_filter(param_preproc.notch)  # removes 50Hz noise
     if display_plots.bandpassed:
         plots.plot_seconds(raw=raw, seconds=10)
 
@@ -291,3 +289,4 @@ def run_analysis(param_channels: ParamChannels = None,
 if __name__ == "__main__":
     # test using sample data
     run_analysis()
+
