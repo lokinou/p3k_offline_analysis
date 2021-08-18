@@ -72,7 +72,7 @@ def define_channels(raw: mne.io.BaseRaw,
     type_map = dict(zip(channel_names, types))
     #print(cname_map)
     # rename and pick eeg
-    raw.rename_channels(cname_map, allow_duplicates=False)
+    raw.rename_channels(cname_map)
     raw.set_channel_types(type_map)
     raw.pick_types(eeg=True, misc=False)
 

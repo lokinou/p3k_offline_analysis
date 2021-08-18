@@ -4,3 +4,7 @@ python setup.py build bdist bdist_wheel
 # upload to PyPI
 cd dist
 twine upload *
+
+
+# test the program
+from p3k.P300Analysis import run_analysis
