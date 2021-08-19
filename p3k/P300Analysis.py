@@ -11,11 +11,12 @@ import mne
 from p3k import channels
 from p3k import epoching
 from p3k import plots
-from p3k.classification import lda_p3oddball
+from p3k.classification import lda_p3oddball, rsquared
 from p3k.params import ParamLDA, ParamInterface, ParamData, ParamEpochs, ParamChannels, InternalParameters, \
     ParamArtifacts, DisplayPlots, SpellerInfo, ParamPreprocessing, SampleParams
 from p3k.read import read_eeg
 from p3k.signal_processing import artifact_rejection, rereference
+
 
 def _make_output_folder(filename_s: Union[str, List[str]], fig_folder: str) -> str:
     if isinstance(filename_s, list):
@@ -44,8 +45,6 @@ def run_analysis(param_channels: ParamChannels = None,
                  param_data: ParamData = None,
                  param_epochs: ParamEpochs = None,
                  internal_params: InternalParameters = None):
-
-
     if param_channels is None:
         param_channels = ParamChannels()
     if param_preproc is None:
@@ -75,8 +74,6 @@ def run_analysis(param_channels: ParamChannels = None,
         param_data.data_dir = default_p.data_dir
         speller_info = default_p.speller_info
         param_channels.cname = default_p.channels
-
-
 
     # Do not import ASR if not used
     if param_preproc.apply_ASR:
@@ -222,7 +219,8 @@ def run_analysis(param_channels: ParamChannels = None,
     if display_plots.channel_average:
         fig = plots.plot_channel_average(epochs=epochs)
         if param_interface.export_figures:
-            out_name = os.path.join(param_interface.export_figures_path, output_name + '_ERPs')
+            out_name = os.path.join(param_interface.export_figures_path, output_name,
+                                    output_name + '_ERPs')
             fig.savefig(out_name, dpi=300, facecolor='w', edgecolor='w', bbox_inches='tight')
 
     # single trial heatmaps
@@ -234,12 +232,25 @@ def run_analysis(param_channels: ParamChannels = None,
         plots.plot_erp_heatmaps_channelwise(epochs=epochs,
                                             csd_applied=param_preproc.apply_CSD)
 
+    ### Rsquared
+    if display_plots.signed_r_square:
+        rsq, fig_rsq = rsquared.signed_r_square(epochs=epochs,
+                                                time_epoch=param_epochs.time_epoch,
+                                                display_rsq_plot=True)
+
+        if param_interface.export_figures:
+            out_name = os.path.join(param_interface.export_figures_path, output_name,
+                                    output_name + '_rsquared')
+            fig_rsq.savefig(out_name, dpi=300, facecolor='w', edgecolor='w', bbox_inches='tight')
+
     ### Classification LDA
     # resample for faster lda
     if param_lda.resample_LDA is not None:
         new_fs = param_lda.resample_LDA  #
         epochs = epochs.copy().resample(new_fs)
         print('resampling to {}Hz'.format(new_fs))
+
+    ## Single epoch classification
 
     cum_score_table = lda_p3oddball.run_p300_LDA_analysis(epochs=epochs,
                                                           nb_k_fold=param_lda.nb_cross_fold,
@@ -257,7 +268,7 @@ def run_analysis(param_channels: ParamChannels = None,
         fig_score = lda_p3oddball.plot_cum_score_table(table=cum_score_table,
                                                        nb_cross_fold=param_lda.nb_cross_fold)
         if param_interface.export_figures:
-            out_name = os.path.join(param_interface.export_figures_path,
+            out_name = os.path.join(param_interface.export_figures_path, output_name,
                                     output_name + '_accuracy')
             fig_score.savefig(out_name, dpi=300, facecolor='w', edgecolor='w', bbox_inches='tight')
 
@@ -266,7 +277,7 @@ def run_analysis(param_channels: ParamChannels = None,
 
     # save the table
     if display_plots.score_table:
-        out_name = os.path.join(param_interface.export_figures_path,
+        out_name = os.path.join(param_interface.export_figures_path, output_name,
                                 output_name + '_score_table.txt')
 
         print(cum_score_table)
@@ -286,7 +297,28 @@ def run_analysis(param_channels: ParamChannels = None,
             pd.set_option('display.width', bak_width)
             print(f"saved to file {out_name}")
 
+
 if __name__ == "__main__":
     # test using sample data
     run_analysis()
 
+    if False:
+        p_data = ParamData(data_dir=r'./SH-AuditoryOddball001')
+
+        p_epochs = ParamEpochs(time_epoch=(-1.4, 1.4),
+                               time_baseline=(-.7, .7))
+
+        p_preproc = ParamPreprocessing(apply_infinite_reference=False,
+                                       apply_CSD=False,
+                                       apply_ASR=False)
+
+        p_lda = ParamLDA(nb_cross_fold=5)
+
+        d_plots = DisplayPlots(erp_heatmap=False,
+                               butterfly_topomap=False)
+
+        run_analysis(param_data=p_data,
+                     param_preproc=p_preproc,
+                     param_epochs=p_epochs,
+                     param_lda=p_lda,
+                     display_plots=d_plots)

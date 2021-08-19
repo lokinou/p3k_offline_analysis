@@ -1,3 +1,16 @@
+from pandas import pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn import model_selection, metrics
+from sklearn.model_selection import KFold
+from sklearn.metrics import roc_auc_score, plot_precision_recall_curve
+
+import seaborn as sns
+
+from p3k.classification.utils import reshape_mne_raw_for_lda
+
 
 def run_single_epoch_LDA_analysis(X_data: np.ndarray,
                                   y_true_labels: np.ndarray,
@@ -5,7 +18,7 @@ def run_single_epoch_LDA_analysis(X_data: np.ndarray,
                                   display_confidence_matrix: bool = True,
                                   display_precision_recall: bool = True):
     # Reshaping data
-    X = _reshape_mne_raw_for_lda(X_data)
+    X = reshape_mne_raw_for_lda(X_data)
     y = y_true_labels
     # Separating train and test
     X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.3)
@@ -50,7 +63,7 @@ def run_single_epoch_LDA_analysis(X_data: np.ndarray,
 
     y_score = clf.decision_function(X_test)
     if display_precision_recall:
-        fig_roc = plot_precision_recall(classifier=clf, X=X_test, y_gt=y_test)
+        fig_roc = plot_precision_recall_curve(classifier=clf, X=X_test, y_gt=y_test)
     else:
         fig_roc = None
 

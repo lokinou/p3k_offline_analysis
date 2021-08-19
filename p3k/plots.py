@@ -157,19 +157,3 @@ def plot_precision_recall(classifier: LinearDiscriminantAnalysis,
 
     plt.show()
     return fig
-
-
-
-def save_df_as_image(df, path: str = None):
-    source = ColumnDataSource(df)
-    df_columns = [df.index.name]
-    df_columns.extend(df.columns.values)
-    columns_for_table=[]
-    if df_columns[0] is None:
-        df_columns[0] = 'idx'
-    for column in df_columns:
-        columns_for_table.append(TableColumn(field=column, title=column))
-
-    data_table = DataTable(source=source, columns=columns_for_table,height_policy="auto",width_policy="auto",index_position=None)
-    if path is not None:
-        export_png(data_table, filename = path)

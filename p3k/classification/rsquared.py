@@ -4,7 +4,12 @@ import numpy as np
 import seaborn as sns
 import pandas as pd
 
-def signed_r_square(epochs: mne.Epochs, time_epoch: Tuple[float], display_rsq_plot: bool = True):
+from typing import Tuple
+import matplotlib.pyplot as plt
+
+def signed_r_square(epochs: mne.Epochs,
+                    time_epoch: Tuple[float],
+                    display_rsq_plot: bool = True):
     rsq = signed_r_square_mne(epochs, classes=['Target', 'NonTarget'])
     # make a pandas database to properly display electrodes and samples
     fs = epochs.info['sfreq']
