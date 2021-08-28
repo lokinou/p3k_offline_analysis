@@ -27,6 +27,11 @@ def _make_output_folder(filename_s: Union[str, List[str]], fig_folder: str) -> s
             output_name = output_name + f'_{len(filename_s)}_files'
     print('Figures will have the name: {}'.format(output_name))
 
+    # creating the ./out folder
+    if not os.path.exists(fig_folder):
+        os.mkdir(fig_folder)
+
+    # creating the data related output folder
     fig_folder = os.path.join(fig_folder, output_name)
     if not os.path.exists(fig_folder):
         os.mkdir(fig_folder)
@@ -300,13 +305,13 @@ def run_analysis(param_channels: ParamChannels = None,
 
 if __name__ == "__main__":
     # test using sample data
-    run_analysis()
+    #run_analysis()
 
-    if False:
-        p_data = ParamData(data_dir=r'./SH-AuditoryOddball001')
+    if True:
+        p_data = ParamData(data_dir=r'./SH-tac_oddball001')
 
-        p_epochs = ParamEpochs(time_epoch=(-1.4, 1.4),
-                               time_baseline=(-.7, .7))
+        p_epochs = ParamEpochs(time_epoch=(-.2, 1),
+                               time_baseline=(-.2, 0))
 
         p_preproc = ParamPreprocessing(apply_infinite_reference=False,
                                        apply_CSD=False,

@@ -1,12 +1,10 @@
 import mne
-import sklearn
 import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-
-from p3k import epoching
 from sklearn.metrics import roc_curve, RocCurveDisplay, precision_recall_curve, PrecisionRecallDisplay
 
+from p3k import epoching
 
 def plot_seconds(raw: mne.io.BaseRaw, seconds: float, title: str = None):
     fig = mne.make_fixed_length_epochs(raw, duration=seconds)[0].plot()
@@ -69,7 +67,7 @@ def plot_channel_average(epochs: mne.Epochs):
     splt_height = splt_width if splt_width * splt_width >= nb_chans + 1 else splt_width + 1
     while splt_height * splt_width < nb_chans + 2:
         splt_height += 1
-    fig, axes = plt.subplots(splt_height, splt_width, figsize=(10, 8), sharex=True, sharey=True)
+    fig, axes = plt.subplots(splt_height, splt_width, figsize=(10, 8), sharex='all', sharey='all')
 
     # evokeds = dict(NonTarget=list(epochs['NonTarget'].iter_evoked()),
     #               Target=list(epochs['Target'].iter_evoked()))
@@ -110,6 +108,7 @@ def plot_channel_average(epochs: mne.Epochs):
     # retrieve the legend and move it in the previous cell
 
     plt.subplots_adjust(hspace=1, wspace=.1)
+    plt.autoscale(enable=True,  axis="both", tight=None)
     plt.show()
     return fig
 

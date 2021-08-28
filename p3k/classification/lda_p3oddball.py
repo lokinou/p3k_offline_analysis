@@ -7,7 +7,7 @@ from sklearn.model_selection import KFold
 import pandas as pd
 from matplotlib import pyplot as plt
 
-import p3k
+#import p3k
 from p3k.params import SpellerInfo
 from p3k.classification.utils import reshape_mne_raw_for_lda
 

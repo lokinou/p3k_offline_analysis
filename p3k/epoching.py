@@ -1,9 +1,11 @@
-from p3k.params import SpellerInfo, InternalParameters
-from p3k.read.bci_format import openvibe
+
 import numpy as np
 import pandas as pd
 import mne
 from typing import List
+
+from p3k.params import SpellerInfo, InternalParameters
+from p3k.read.bci_format import openvibe
 
 
 def parse_annotations(annotations:mne.annotations.Annotations,

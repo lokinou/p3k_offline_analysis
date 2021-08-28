@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.1.8'
+VERSION = '0.1.9'
 DESCRIPTION = 'p3k - yet another P300 offline classification tool'
 LONG_DESCRIPTION = 'P300 offline classification from BCI2000 P3Speller and OpenVibe P300 scenario'
 
