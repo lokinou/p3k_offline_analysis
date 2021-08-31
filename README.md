@@ -1,4 +1,4 @@
-# p3k - yet another offline P300 analysis tool
+# p3k - yet another offline ERP analysis tool
 
 From BCI2000 and OpenVibe P300 Speller. Based on [mne-python](https://github.com/mne-tools/mne-python)
 
