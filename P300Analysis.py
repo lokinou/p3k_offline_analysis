@@ -203,7 +203,7 @@ def run_analysis(param_channels: ParamChannels = None,
     # Channels should be filtered out before epochs because any faulty channel would cause every epoch to be discarded
     if param_artifacts.reject_artifactual_epochs:
         reject_criteria = dict(eeg=param_artifacts.artifact_threshold)  # 100 µV  #eog=200e-6)
-        _ = epochs.drop_bad(reject=reject_criteria) # Todo 2
+        _ = epochs.drop_bad(reject=reject_criteria) # Todo 3
         if display_plots.reject_epochs:
             epochs.plot_drop_log()
 
