@@ -45,7 +45,8 @@ def score_cumulative(clf, X, y, step):
 
 def auc_cumulative(y, y_preds_cumulative, step):
     array_out = []
-    for i in range(0, y.shape[0] // step):
+    #for i in range(0, y.shape[0] // step):  # wrong stepping function
+    for i in range(0, len(y_preds_cumulative)):
         y_pred = y_preds_cumulative[i]
         y_gt = y[0:step * (i + 1)]
         roc = sklearn.metrics.roc_auc_score(y_gt, y_pred)

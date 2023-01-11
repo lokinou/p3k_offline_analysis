@@ -1,12 +1,15 @@
 import os
 from pathlib import Path
 from typing import Union, List
-
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import pandas as pd
 import mne
+import logging
+logging.basicConfig(level=logging.DEBUG)
+logging.debug('debug logging activated')
 
 from p3k import channels
 from p3k import epoching
@@ -17,6 +20,7 @@ from p3k.params import ParamLDA, ParamInterface, ParamData, ParamEpochs, ParamCh
 from p3k.read import read_eeg
 from p3k.signal_processing import artifact_rejection, rereference
 
+from meegkit.asr import ASR
 
 def _make_output_folder(filename_s: Union[str, List[str]], fig_folder: str) -> str:
     if isinstance(filename_s, list):
@@ -38,6 +42,25 @@ def _make_output_folder(filename_s: Union[str, List[str]], fig_folder: str) -> s
     print('Created output directory'.format(fig_folder))
 
     return output_name
+
+def fit_asr(data: np.ndarray, fs: int, window_s: float = .5,
+            data_interval_s: float = None,
+            method: str = 'euclid', estimator: str ='scm'):
+    # initialize  the asr model
+    asr_model = ASR(sfreq=int(fs), method=method, win_len=window_s, estimator=estimator)
+
+    # if an interval was chosen for training (sec)
+    if data_interval_s is not None:
+        train_idx = np.arange(data_interval_s[0] * fs, data_interval_s[1] * fs, dtype=int)
+    # otherwise select the whole training set
+    else:
+        train_idx = np.arange(0, data.shape[1])
+
+    train_data = data[:, train_idx]
+
+    # Fit the ASR model with calibration data
+    _, sample_mask = asr_model.fit(train_data)
+    return asr_model
 
 
 def run_analysis(param_channels: ParamChannels = None,
@@ -90,6 +113,16 @@ def run_analysis(param_channels: ParamChannels = None,
         read_eeg.load_eeg_from_folder(data_path=param_data.data_dir,
                                       begin_stimuli_code=internal_params.STIMULUS_CODE_BEGIN,
                                       speller_info=speller_info)
+
+    if param_artifacts.correct_artifacts_asr:
+        # fit the ASR model
+        asr_trained = fit_asr(data=raw.get_data(), fs=int(raw.info["sfreq"]))
+
+        # reconstruct data using ASR (reducing artifacts)
+        data_reconstructed = asr_trained.transform(raw.get_data())
+
+        # change the data
+        raw._data = data_reconstructed
 
     if acquisition_software == "openvibe":
         assert speller_info.nb_seq is not None, f'If using openvibe data, please define the ' \
@@ -222,7 +255,7 @@ def run_analysis(param_channels: ParamChannels = None,
 
     # classwise averages
     if display_plots.channel_average:
-        fig = plots.plot_channel_average(epochs=epochs)
+        fig = plots.plot_channel_average(epochs=epochs, )
         if param_interface.export_figures:
             out_name = os.path.join(param_interface.export_figures_path, output_name,
                                     output_name + '_ERPs')

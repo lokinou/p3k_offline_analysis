@@ -48,6 +48,7 @@ class ParamPreprocessing:
 class ParamArtifacts:
     reject_channels_full_of_artifacts: bool = False
     reject_artifactual_epochs: bool = False
+    correct_artifacts_asr: bool = False
     artifact_threshold: float = 100e-6
     ratio_tolerated_artifacts: float = 0.3
 
