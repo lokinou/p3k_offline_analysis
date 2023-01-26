@@ -20,7 +20,7 @@ from p3k.params import ParamLDA, ParamInterface, ParamData, ParamEpochs, ParamCh
 from p3k.read import read_eeg
 from p3k.signal_processing import artifact_rejection, rereference
 
-from meegkit.asr import ASR
+from meegkit.asr import ASR  # https://github.com/nbara/python-meegkit
 
 def _make_output_folder(filename_s: Union[str, List[str]], fig_folder: str) -> str:
     if isinstance(filename_s, list):
@@ -43,6 +43,7 @@ def _make_output_folder(filename_s: Union[str, List[str]], fig_folder: str) -> s
 
     return output_name
 
+# Artifact Subspace Reconstruction (ASR) must be calibrated before it is applied
 def fit_asr(data: np.ndarray, fs: int, window_s: float = .5,
             data_interval_s: float = None,
             method: str = 'euclid', estimator: str ='scm'):
@@ -61,6 +62,8 @@ def fit_asr(data: np.ndarray, fs: int, window_s: float = .5,
     # Fit the ASR model with calibration data
     _, sample_mask = asr_model.fit(train_data)
     return asr_model
+
+
 
 
 def run_analysis(param_channels: ParamChannels = None,
@@ -108,13 +111,14 @@ def run_analysis(param_channels: ParamChannels = None,
         from p3k.signal_processing import ASR
 
     ## Read the EEG from files
-
     raw, acquisition_software, speller_info = \
         read_eeg.load_eeg_from_folder(data_path=param_data.data_dir,
                                       begin_stimuli_code=internal_params.STIMULUS_CODE_BEGIN,
                                       speller_info=speller_info)
 
-    if param_artifacts.correct_artifacts_asr:
+    assert raw is not None, "Failed to load the files"
+
+    if param_artifacts.correct_artifacts_asr: # Todo: Visualize signal before and after ASR
         # fit the ASR model
         asr_trained = fit_asr(data=raw.get_data(), fs=int(raw.info["sfreq"]))
 
@@ -130,8 +134,6 @@ def run_analysis(param_channels: ParamChannels = None,
 
     # update the detected bci software that generated data
     param_data.acquisition_software = acquisition_software
-
-    assert raw is not None, "Failed to load the files"
 
     # Ensure we have an output folder to save pictures
     if param_interface.export_figures:
@@ -155,7 +157,11 @@ def run_analysis(param_channels: ParamChannels = None,
 
     # display signal before any preprocessing
     if display_plots.raw:
-        ep_plot = plots.plot_seconds(raw=raw, seconds=10)
+        ep_plot = plots.plot_seconds(raw=raw, seconds=4)
+
+
+
+# PREPROCESSING ########################################################################################################
 
     # Data resampling
     if param_preproc.apply_resample:
@@ -173,7 +179,7 @@ def run_analysis(param_channels: ParamChannels = None,
 
     # Bandpass filtering
     raw = raw.filter(param_preproc.bandpass[0], param_preproc.bandpass[1], fir_window='hann', method='iir')
-    raw = raw.notch_filter(param_preproc.notch)  # removes 50Hz noise
+    #raw = raw.notch_filter(param_preproc.notch)  # removes 50Hz noise
     if display_plots.bandpassed:
         plots.plot_seconds(raw=raw, seconds=10)
 
@@ -221,7 +227,7 @@ def run_analysis(param_channels: ParamChannels = None,
     # We only select targets and non targets, those should match exactly with stimuli annotations made in metadata
     events = mne.pick_events(all_events, [0, 1])
 
-    # make epochs
+    # make epochs AND baseline correct (https://mne.tools/stable/generated/mne.Epochs.html)
     epochs = mne.Epochs(raw, events, baseline=param_epochs.time_baseline,
                         event_id=internal_params.EVENT_IDS,
                         tmin=param_epochs.time_epoch[0], tmax=param_epochs.time_epoch[1],
@@ -229,16 +235,16 @@ def run_analysis(param_channels: ParamChannels = None,
                         preload=True,
                         metadata=df_meta)
 
-    if True or display_plots.epochs:
-        fig = epochs[0:5].plot(title='displaying 5 first epochs')
+    #if display_plots.epochs:
+     #   fig = epochs[0:5].plot(title='displaying 5 first epochs')
 
     ### Epoch rejection
     # Channels should be filtered out before epochs because any faulty channel would cause every epoch to be discarded
     if param_artifacts.reject_artifactual_epochs:
         reject_criteria = dict(eeg=param_artifacts.artifact_threshold)  # 100 µV  #eog=200e-6)
-        _ = epochs.drop_bad(reject=reject_criteria) # Todo
-        if display_plots.reject_epochs:
-            epochs.plot_drop_log()
+        epochs = epochs.drop_bad(reject=reject_criteria) # Todo
+        #if display_plots.reject_epochs:
+         #   epochs.plot_drop_log()
 
     ## Apply current source density
     if param_preproc.apply_CSD:
@@ -255,11 +261,13 @@ def run_analysis(param_channels: ParamChannels = None,
 
     # classwise averages
     if display_plots.channel_average:
-        fig = plots.plot_channel_average(epochs=epochs, )
+        #fig = plots.plot_channel_average(epochs=epochs, )
+        fig_ERP = plots.plot_average_erp(epochs=epochs, picks=["Fz"])[0] # https://mne.discourse.group/t/plot-compare-evokeds-from-mne-evokedarray-confidence-intervals-and-ylim/3522/3
         if param_interface.export_figures:
             out_name = os.path.join(param_interface.export_figures_path, output_name,
                                     output_name + '_ERPs')
-            fig.savefig(out_name, dpi=300, facecolor='w', edgecolor='w', bbox_inches='tight')
+            #fig.savefig(out_name, dpi=300, facecolor='w', edgecolor='w', bbox_inches='tight')
+            fig_ERP.savefig(out_name, dpi=300, facecolor='w', edgecolor='w', bbox_inches='tight')
 
     # single trial heatmaps
     if display_plots.erp_heatmap:
@@ -281,6 +289,8 @@ def run_analysis(param_channels: ParamChannels = None,
                                     output_name + '_rsquared')
             fig_rsq.savefig(out_name, dpi=300, facecolor='w', edgecolor='w', bbox_inches='tight')
 
+
+    return
     ### Classification LDA
     # resample for faster lda
     if param_lda.resample_LDA is not None:

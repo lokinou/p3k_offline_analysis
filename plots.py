@@ -56,7 +56,7 @@ def plot_average_erp(epochs: mne.Epochs, picks=None):
     evokeds = dict(NonTarget=l_nt,
                    Target=l_target)
     # picks = [f'eeg{n}' for n in range(10, 15)]
-    fig_handle = mne.viz.plot_compare_evokeds(evokeds, picks=picks, combine='mean')
+    fig_handle = mne.viz.plot_compare_evokeds(evokeds, picks=picks, ci=True,  show_sensors=False)
     return fig_handle
 
 
