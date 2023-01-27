@@ -8,8 +8,8 @@ import seaborn as sns
 import pandas as pd
 import mne
 import logging
-logging.basicConfig(level=logging.DEBUG)
-logging.debug('debug logging activated')
+#logging.basicConfig(level=logging.DEBUG)
+#logging.debug('debug logging activated')
 
 from p3k import channels
 from p3k import epoching
@@ -65,7 +65,6 @@ def fit_asr(data: np.ndarray, fs: int, window_s: float = .5,
 
 
 
-
 def run_analysis(param_channels: ParamChannels = None,
                  param_preproc: ParamPreprocessing = None,
                  param_artifacts: ParamArtifacts = None,
@@ -75,7 +74,10 @@ def run_analysis(param_channels: ParamChannels = None,
                  param_interface: ParamInterface = None,
                  param_data: ParamData = None,
                  param_epochs: ParamEpochs = None,
-                 internal_params: InternalParameters = None):
+                 internal_params: InternalParameters = None,
+                 current_folder: str = None,
+                 electrodes: list = [0], # Todo: Test
+                 classify: bool = False):
     if param_channels is None:
         param_channels = ParamChannels()
     if param_preproc is None:
@@ -94,6 +96,7 @@ def run_analysis(param_channels: ParamChannels = None,
         param_interface = ParamInterface()
     if param_epochs is None:
         param_epochs = ParamEpochs()
+
 
     # Checking whether a data folder was provided
     if param_data is None:
@@ -235,8 +238,8 @@ def run_analysis(param_channels: ParamChannels = None,
                         preload=True,
                         metadata=df_meta)
 
-    #if display_plots.epochs:
-     #   fig = epochs[0:5].plot(title='displaying 5 first epochs')
+    if display_plots.epochs:
+        fig = epochs[0:5].plot(title='displaying 5 first epochs')
 
     ### Epoch rejection
     # Channels should be filtered out before epochs because any faulty channel would cause every epoch to be discarded
@@ -262,7 +265,10 @@ def run_analysis(param_channels: ParamChannels = None,
     # classwise averages
     if display_plots.channel_average:
         #fig = plots.plot_channel_average(epochs=epochs, )
-        fig_ERP = plots.plot_average_erp(epochs=epochs, picks=["Fz"])[0] # https://mne.discourse.group/t/plot-compare-evokeds-from-mne-evokedarray-confidence-intervals-and-ylim/3522/3
+        # https://mne.discourse.group/t/plot-compare-evokeds-from-mne-evokedarray-confidence-intervals-and-ylim/3522/3
+        # Epochs schon gemittelt -> kein CI??
+        #fig_ERP = plots.plot_average_erp(epochs=epochs, title=current_folder, picks=electrodes)[0]
+        fig_ERP = plots.plot_CI_erp(epochs=epochs, title=current_folder, picks=electrodes)[0]
         if param_interface.export_figures:
             out_name = os.path.join(param_interface.export_figures_path, output_name,
                                     output_name + '_ERPs')
@@ -289,8 +295,10 @@ def run_analysis(param_channels: ParamChannels = None,
                                     output_name + '_rsquared')
             fig_rsq.savefig(out_name, dpi=300, facecolor='w', edgecolor='w', bbox_inches='tight')
 
+    # Classify, or don't
+    if not classify: return
 
-    return
+
     ### Classification LDA
     # resample for faster lda
     if param_lda.resample_LDA is not None:

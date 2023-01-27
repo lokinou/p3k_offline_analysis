@@ -51,13 +51,23 @@ def plot_butterfly_topomap(epochs: mne.Epochs):
     return fig_target, figt_nt
 
 
-def plot_average_erp(epochs: mne.Epochs, picks=None):
+def plot_average_erp(epochs: mne.Epochs, title=None, picks=None):
+    title = ''.join(picks) + " " + title     # picks = [f'eeg{n}' for n in range(10, 15)]
     l_target, l_nt = epoching.get_avg_target_nt(epochs=epochs)
-    evokeds = dict(NonTarget=l_nt,
-                   Target=l_target)
-    # picks = [f'eeg{n}' for n in range(10, 15)]
-    fig_handle = mne.viz.plot_compare_evokeds(evokeds, picks=picks, ci=True,  show_sensors=False)
+    evokeds = dict(NonTarget=l_nt, Target=l_target)
+    fig_handle = mne.viz.plot_compare_evokeds(evokeds, picks=picks, show_sensors=False,
+                                              title = title, linestyles={'NonTarget': 'dashed'},
+                                              colors={'Target': 'r', 'NonTarget': 'b'} )
     return fig_handle
+
+def plot_CI_erp(epochs: mne.Epochs, title=None, picks=None):
+    title = ''.join(picks) + " " + title
+    my_evokeds = dict(NonTarget=list(epochs['NonTarget'].iter_evoked()),Target=list(epochs['Target'].iter_evoked()))
+    fig_handle = mne.viz.plot_compare_evokeds(my_evokeds, picks=picks, show_sensors=False, combine="mean",                                 # ci=True by default
+                                              title = title, linestyles={'NonTarget': 'dashed'},
+                                              colors={'Target': '#c10629', 'NonTarget': 'steelblue'} )
+    return fig_handle
+
 
 
 def plot_channel_average(epochs: mne.Epochs):
