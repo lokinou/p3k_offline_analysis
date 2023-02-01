@@ -63,8 +63,9 @@ def plot_average_erp(epochs: mne.Epochs, title=None, picks=None):
 def plot_CI_erp(epochs: mne.Epochs, title=None, picks=None):
     title = ''.join(picks) + " " + title
     my_evokeds = dict(NonTarget=list(epochs['NonTarget'].iter_evoked()),Target=list(epochs['Target'].iter_evoked()))
-    fig_handle = mne.viz.plot_compare_evokeds(my_evokeds, picks=picks, show_sensors=False, combine="mean",                                 # ci=True by default
-                                              title = title, linestyles={'NonTarget': 'dashed'},
+    fig_handle = mne.viz.plot_compare_evokeds(my_evokeds, picks=picks, show_sensors=False, combine="mean", ylim=dict(eeg=[-10, 15]),                                # ci=True by default
+                                              title = title,styles={"Target": {"linewidth": 3}, "NonTarget": {"linewidth": 3}},
+                                              linestyles={'NonTarget': 'dashed'},
                                               colors={'Target': '#c10629', 'NonTarget': 'steelblue'} )
     return fig_handle
 

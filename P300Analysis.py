@@ -264,15 +264,14 @@ def run_analysis(param_channels: ParamChannels = None,
 
     # classwise averages
     if display_plots.channel_average:
-        #fig = plots.plot_channel_average(epochs=epochs, )
-        # https://mne.discourse.group/t/plot-compare-evokeds-from-mne-evokedarray-confidence-intervals-and-ylim/3522/3
-        # Epochs schon gemittelt -> kein CI??
-        #fig_ERP = plots.plot_average_erp(epochs=epochs, title=current_folder, picks=electrodes)[0]
-        fig_ERP = plots.plot_CI_erp(epochs=epochs, title=current_folder, picks=electrodes)[0]
+        #fig = plots.plot_channel_average(epochs=epochs)                                                                # OVERVIEW of all electrodes # error with 'VP04_Calibration001'
+        #fig_avg_ERP = plots.plot_average_erp(epochs=epochs, title=current_folder)#, picks=electrodes)[0]               # Average ohne CI
+        fig_ERP = plots.plot_CI_erp(epochs=epochs, title=current_folder, picks=electrodes)[0]                           # Average mit CI
+        #fig_ERP.set_size_inches(4, 3)                                                                    # error because code halts during figure display, no ref after figure closed manually
+
         if param_interface.export_figures:
             out_name = os.path.join(param_interface.export_figures_path, output_name,
                                     output_name + '_ERPs')
-            #fig.savefig(out_name, dpi=300, facecolor='w', edgecolor='w', bbox_inches='tight')
             fig_ERP.savefig(out_name, dpi=300, facecolor='w', edgecolor='w', bbox_inches='tight')
 
     # single trial heatmaps
