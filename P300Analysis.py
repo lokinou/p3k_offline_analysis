@@ -20,7 +20,7 @@ from p3k.params import ParamLDA, ParamInterface, ParamData, ParamEpochs, ParamCh
 from p3k.read import read_eeg
 from p3k.signal_processing import artifact_rejection, rereference
 
-from meegkit.asr import ASR  # https://github.com/nbara/python-meegkit
+#from meegkit.asr import ASR  # https://github.com/nbara/python-meegkit
 
 def _make_output_folder(filename_s: Union[str, List[str]], fig_folder: str) -> str:
     if isinstance(filename_s, list):
@@ -264,10 +264,10 @@ def run_analysis(param_channels: ParamChannels = None,
 
     # classwise averages
     if display_plots.channel_average:
-        #fig = plots.plot_channel_average(epochs=epochs)                                                                # OVERVIEW of all electrodes # error with 'VP04_Calibration001'
-        #fig_avg_ERP = plots.plot_average_erp(epochs=epochs, title=current_folder)#, picks=electrodes)[0]               # Average ohne CI
-        fig_ERP = plots.plot_CI_erp(epochs=epochs, title=current_folder, picks=electrodes)[0]                           # Average mit CI
-        #fig_ERP.set_size_inches(4, 3)                                                                    # error because code halts during figure display, no ref after figure closed manually
+        #fig = plots.plot_channel_average(epochs=epochs)   # OVERVIEW of all electrodes - bugged, will sometimes find only 1 axis tick and then crash. Do not try to fix, will lose mind
+        #fig_avg_ERP = plots.plot_average_erp(epochs=epochs, title=current_folder)#, picks=electrodes)[0]               # Average w/o CI (faster)
+        fig_ERP = plots.plot_CI_erp(epochs=epochs, title=current_folder, picks=electrodes)[0]                           # Average with CI
+        #fig_ERP.set_size_inches(4, 3)     # error because code halts during figure display, no ref after figure closed manually. Todo: Put into function before figure shown
 
         if param_interface.export_figures:
             out_name = os.path.join(param_interface.export_figures_path, output_name,
@@ -295,18 +295,25 @@ def run_analysis(param_channels: ParamChannels = None,
             fig_rsq.savefig(out_name, dpi=300, facecolor='w', edgecolor='w', bbox_inches='tight')
 
     # Classify, or don't
-    if not classify: return
+    if not classify:
+        avg_evoked = epoching.get_avg_target_nt(epochs) # returns evoked tuple: T/NT
+        return avg_evoked                               # todo: restrict to picks
 
 
-    ### Classification LDA
+
+
+
+
+
+    ### Classification LDA                                          # currently not working with dropped epochs
     # resample for faster lda
+
     if param_lda.resample_LDA is not None:
         new_fs = param_lda.resample_LDA  #
         epochs = epochs.copy().resample(new_fs)
         print('resampling to {}Hz'.format(new_fs))
 
     ## Single epoch classification
-
     cum_score_table = lda_p3oddball.run_p300_LDA_analysis(epochs=epochs,
                                                           nb_k_fold=param_lda.nb_cross_fold,
                                                           speller_info=speller_info)
@@ -330,7 +337,7 @@ def run_analysis(param_channels: ParamChannels = None,
     print(f"Number of ERP targets={epochs['Target']._data.shape[0]},"
           f" non-targets={epochs['NonTarget']._data.shape[0]}")
 
-    # save the table
+    # save the table # Hi Loic! You rock!!1
     if display_plots.score_table:
         out_name = os.path.join(param_interface.export_figures_path, output_name,
                                 output_name + '_score_table.txt')
