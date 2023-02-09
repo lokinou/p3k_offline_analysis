@@ -100,7 +100,14 @@ def extract_annotations(filename, begin_stimuli_code: int, verbose=False):
             'WARNING: no end of trial for the last trial (interrupted recording?), it will be ignored for offline accuracy calculation')
         inter_trial_duration = end_of_trial_idx[0:len(new_trial_idx)] - new_trial_idx
     else:
-        inter_trial_duration = end_of_trial_idx - new_trial_idx
+        try:
+            inter_trial_duration = end_of_trial_idx - new_trial_idx
+        except:
+            print('Error in bci2000.py: Could not determine all states correctly. PhaseInSequence might start with code 3 (=post sequence marker)')
+            print('Code found at position phase[0]: ' +str(phase[0]))
+            input("Press Enter to continue with an unsafe workaround that removes the first batch of code 3. Have a nice day.")
+            inter_trial_duration = end_of_trial_idx[1:] - new_trial_idx  # Potential hacky fix, just discard the "first" state
+
 
     inter_trial_duration = inter_trial_duration * sample_lengh  # express in seconds
 
