@@ -54,23 +54,26 @@ def plot_butterfly_topomap(epochs: mne.Epochs):
     figt_nt = plt.gcf().canvas.set_window_title('Non-Target joint plot')
     return fig_target, figt_nt
 
-# Group level analysis
+# Group level analysis (Matthias)
 # Input: List with averaged evokeds per subject
-def plot_grand_average_erp(evoked_per_subject, electrodes_to_plot, title="Grand Average"):
-    title = ''.join(electrodes_to_plot) + " " + title
+def plot_grand_average_erp(ci, evoked_per_subject, electrode, title="Grand Average"):
+    title = ''.join(electrode) + " " + title
     # splitting by type to fit function signature
     evoked_T = []
     evoked_NT = []
-    for i in range(evoked_per_subject.__len__()):   # check for bug: is it really iterating over different evokeds?
+    for i in range(evoked_per_subject.__len__()):   # [ ] check for bug: is it really iterating over different evokeds?
         evoked_T.append(evoked_per_subject[i][0])   # Target
         evoked_NT.append(evoked_per_subject[i][1])  # NonTarget
-    evoked_T = mne.grand_average(evoked_T, interpolate_bads=False, drop_bads=False)
-    evoked_NT = mne.grand_average(evoked_NT, interpolate_bads=False, drop_bads=False)
+
+    if not ci:
+        evoked_T = mne.grand_average(evoked_T, interpolate_bads=False, drop_bads=False)
+        evoked_NT = mne.grand_average(evoked_NT, interpolate_bads=False, drop_bads=False)
 
     evokeds = dict(NonTarget=evoked_NT, Target=evoked_T)
-    mne.viz.plot_compare_evokeds(evokeds, picks=electrodes_to_plot, show_sensors=False,
+    return mne.viz.plot_compare_evokeds(evokeds, picks=electrode, show_sensors=False,
                                               title = title, styles={"Target": {"linewidth": 3}, "NonTarget": {"linewidth": 3}},
                                               linestyles={'NonTarget': 'dashed'}, colors={'Target': color_T, 'NonTarget': color_NT})
+
 
 def plot_average_erp(epochs: mne.Epochs, title=None, picks=None):
     title = ''.join(picks) + " " + title     # picks = [f'eeg{n}' for n in range(10, 15)]
@@ -81,10 +84,12 @@ def plot_average_erp(epochs: mne.Epochs, title=None, picks=None):
                                               colors={'Target': 'r', 'NonTarget': 'b'} )
     return fig_handle
 
+# Matthias. Like 'plot_average_erp', but without averaging of epochs to retain information necessary for CI calculation
 def plot_CI_erp(epochs: mne.Epochs, title=None, picks=None):
     title = ''.join(picks) + " " + title
-    my_evokeds = dict(NonTarget=list(epochs['NonTarget'].iter_evoked()),Target=list(epochs['Target'].iter_evoked()))
-    fig_handle = mne.viz.plot_compare_evokeds(my_evokeds, picks=picks, show_sensors=False, combine="mean", ylim=dict(eeg=[-10, 15]),                                # ci=True by default
+
+    evokeds = dict(NonTarget=list(epochs['NonTarget'].iter_evoked()),Target=list(epochs['Target'].iter_evoked()))
+    fig_handle = mne.viz.plot_compare_evokeds(evokeds, picks=picks, show_sensors=False, combine="mean", ylim=dict(eeg=[-10, 15]),                                # ci=True by default
                                               title = title,styles={"Target": {"linewidth": 3}, "NonTarget": {"linewidth": 3}},
                                               linestyles={'NonTarget': 'dashed'},
                                               colors={'Target': color_T, 'NonTarget': color_NT} )

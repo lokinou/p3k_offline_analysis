@@ -264,7 +264,7 @@ def run_analysis(param_channels: ParamChannels = None,
 
     # classwise averages
     if display_plots.channel_average:
-        #fig = plots.plot_channel_average(epochs=epochs)   # OVERVIEW of all electrodes - bugged, will sometimes find only 1 axis tick and then crash. Do not try to fix, will lose mind
+        #fig = plots.plot_channel_average(epochs=epochs)   # OVERVIEW of all electrodes - bugfixed, would sometimes find only 1 axis tick and then crash.
         #fig_avg_ERP = plots.plot_average_erp(epochs=epochs, title=current_folder)#, picks=electrodes)[0]               # Average w/o CI (faster)
         fig_ERP = plots.plot_CI_erp(epochs=epochs, title=current_folder, picks=electrodes)[0]                           # Average with CI
         #fig_ERP.set_size_inches(4, 3)     # error because code halts during figure display, no ref after figure closed manually. Todo: Put into function before figure shown
