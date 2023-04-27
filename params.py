@@ -97,6 +97,7 @@ class DisplayPlots:
     best_channel_erp: bool = True
     offline_accuracy: bool = True
     score_table: bool = True
+    fixed_display_range: list = field(default_factory=list) # Matthias
 
 
 @dataclass

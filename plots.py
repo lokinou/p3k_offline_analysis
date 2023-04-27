@@ -85,11 +85,12 @@ def plot_average_erp(epochs: mne.Epochs, title=None, picks=None):
     return fig_handle
 
 # Matthias. Like 'plot_average_erp', but without averaging of epochs to retain information necessary for CI calculation
-def plot_CI_erp(epochs: mne.Epochs, title=None, picks=None):
+def plot_CI_erp(epochs: mne.Epochs, title=None, picks=None, display_range=[]):
     title = ''.join(picks) + " " + title
-
+    if display_range==[]:
+        display_range=[-5,10]
     evokeds = dict(NonTarget=list(epochs['NonTarget'].iter_evoked()),Target=list(epochs['Target'].iter_evoked()))
-    fig_handle = mne.viz.plot_compare_evokeds(evokeds, picks=picks, show_sensors=False, combine="mean", ylim=dict(eeg=[-10, 15]),                                # ci=True by default
+    fig_handle = mne.viz.plot_compare_evokeds(evokeds, picks=picks, show_sensors=False, combine="mean", ylim=dict(eeg=display_range),                                # ci=True by default
                                               title = title,styles={"Target": {"linewidth": 3}, "NonTarget": {"linewidth": 3}},
                                               linestyles={'NonTarget': 'dashed'},
                                               colors={'Target': color_T, 'NonTarget': color_NT} )
