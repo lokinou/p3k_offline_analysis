@@ -65,7 +65,11 @@ def define_channels(raw: mne.io.BaseRaw,
         elif nc in montage.ch_names:  # check the 10-05 montage for all electrode names
             t = 'eeg'
         else:
-            t = 'misc'  # if not found, discard the channel as misc
+            #t = 'misc'  # if not found, discard the channel as misc
+            t = 'eeg'  # if not found, it might be a non-10-20 EEG channel (e.g. cEEGRid).
+                       # Keep as EEG, otherwise it will be dropped in some later steps!
+                       # (epochs.py -> picks = _picks_to_idx(self.info, picks, 'data_or_ica', ()))  # Matthias
+             # Program still complains that cEEGrid is not in the montage. Fix otherwise
 
         types.append(t)
 
@@ -74,9 +78,12 @@ def define_channels(raw: mne.io.BaseRaw,
     # rename and pick eeg
     raw.rename_channels(cname_map)
     raw.set_channel_types(type_map)
-    raw.pick_types(eeg=True, misc=False)
+    raw.pick_types(eeg=True, misc=True)
 
     #print('Electrode mapping')
-    raw = raw.set_montage(montage, match_case=False)
+    try:
+        raw = raw.set_montage(montage, match_case=False)
+    except:
+        "Failed set montage, check for non standard channel names."
 
     return raw

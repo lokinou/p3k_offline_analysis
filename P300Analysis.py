@@ -121,6 +121,11 @@ def run_analysis(param_channels: ParamChannels = None,
 
     assert raw is not None, "Failed to load the files"
 
+    # Bipolar channels for cEEGrid TEST # Matthias
+    # cEEGrid channels are declared as 'eeg' (not 'misc') in channels.py
+    if True:
+        raw = mne.set_bipolar_reference(raw, "R2", "R7", ch_name=None, ch_info=None, drop_refs=False, copy=True, verbose=None)
+
     if param_artifacts.correct_artifacts_asr: # Todo: Visualize signal before and after ASR
         # fit the ASR model
         asr_trained = fit_asr(data=raw.get_data(), fs=int(raw.info["sfreq"]))
@@ -146,6 +151,7 @@ def run_analysis(param_channels: ParamChannels = None,
     # Channel definition
     raw = channels.define_channels(raw=raw,
                                    channel_names=param_channels.cname,
+                                   #channel_of_interest=param_channels.interest, # Matthias, allows to restrict processes suchs as epoch rejection on a subset of channels
                                    montage=None)
 
     if display_plots.montage_plots:
@@ -171,7 +177,12 @@ def run_analysis(param_channels: ParamChannels = None,
         raw.resample(param_preproc.resample_freq)
 
     # Variance based channel rejection on all the recording
-    list_art_ch = artifact_rejection.detect_artifactual_channels(raw=raw, notch_hz=50)
+    try:
+        list_art_ch = artifact_rejection.detect_artifactual_channels(raw=raw, notch_hz=50)
+    except:
+        list_art_ch = []
+        print("Error in: artifact_rejection.detect_artifactual_channels(raw=raw, notch_hz=50)") # Matthias debugging
+
     if param_artifacts.reject_channels_full_of_artifacts:
         channels.flag_channels_as_bad(raw=raw, bad_channels=list_art_ch)
 
@@ -234,7 +245,7 @@ def run_analysis(param_channels: ParamChannels = None,
     epochs = mne.Epochs(raw, events, baseline=param_epochs.time_baseline,
                         event_id=internal_params.EVENT_IDS,
                         tmin=param_epochs.time_epoch[0], tmax=param_epochs.time_epoch[1],
-                        event_repeated='drop', picks=['eeg', 'csd'],
+                        event_repeated='drop', picks=['eeg', 'csd', 'misc'],
                         preload=True,
                         metadata=df_meta)
 

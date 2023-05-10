@@ -6,7 +6,7 @@ from sklearn.metrics import roc_curve, RocCurveDisplay, precision_recall_curve, 
 
 from p3k import epoching
 
-color_T = '#c10629' # Netflix red
+color_T = '#c10629'    # Netflix red
 color_NT = 'steelblue' # also very badass
 
 

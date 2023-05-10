@@ -24,6 +24,15 @@ def extract_annotations(filename, begin_stimuli_code: int, verbose=False):
         stimulus_begin = np.squeeze(file.states['Flashing'])
 
     phase = np.squeeze(file.states['PhaseInSequence'])
+    # Matthias
+    if phase[0] == 1 or phase[0] == 3:
+        print('Potential issue in bci2000.py: Could not determine all states correctly. phase (=PhaseInSequence) might start with code 3 (=post sequence marker) or code 1 (pre)')
+        print('Code found at position phase[0]: ' + str(phase[0]))
+        print('BCI2000 files typically start with code 0, but there are exceptions for reasons unknown.')
+        #input("Press ENTER to continue with an unsafe workaround that simply overwrites the first batch of codes to 0. Have a nice day.")
+        import ctypes  # An included library with Python install.
+        ctypes.windll.user32.MessageBoxW(0, "There was an issue with BCI2000 state codes. Please check the console log. Closing this window will continue with a workaround.","Warning", 1)
+        phase[0:10] = 0
 
     fs = file.samplingrate
 
@@ -103,6 +112,7 @@ def extract_annotations(filename, begin_stimuli_code: int, verbose=False):
         try:
             inter_trial_duration = end_of_trial_idx - new_trial_idx
         except:
+            1/0 # this is handled elsewhere now (phase beginning set to zeroes), you should not be here any more
             print('Error in bci2000.py: Could not determine all states correctly. PhaseInSequence might start with code 3 (=post sequence marker)')
             print('Code found at position phase[0]: ' +str(phase[0]))
             input("Press Enter to continue with an unsafe workaround that removes the first batch of code 3. Have a nice day.")
