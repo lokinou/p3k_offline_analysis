@@ -54,6 +54,9 @@ From BCI2000 and OpenVibe P300 Speller. Based on [mne-python](https://github.com
 
 ## Usage
 
+If you are trying to modify from sources, make sure in the first lines of `P300Analysis.py` that `DEVELOP = True` 
+to make sure python loads the  current source files and not the package installe with pip located in site-packages.
+
 #### Test the sample data
 
 ```
@@ -101,7 +104,7 @@ p_channels = ParamChannels(cname=['Fz','FC1','FC2','C1','Cz','C2','P3','Pz','P4'
 speller_info = SpellerInfo(nb_stimulus_rows=7, nb_stimulus_cols=7, nb_seq=10)
 
 # gdf file location
-p_data = ParamData(data_dir=r'./data_ov')
+p_data = ParamData(data_files=r'./data_ov')
 
 # run the analysis
 run_analysis(param_data=p_data, param_channels=p_channels, speller_info=speller_info)
@@ -115,7 +118,7 @@ If not initialized or passed to `run_analysis()` default parameters apply. You c
 from p3k.P300Analysis import run_analysis
 from p3k.params import ParamData, ParamPreprocessing, ParamArtifacts, ParamEpochs, ParamLDA, ParamInterface, DisplayPlots, SpellerInfo
 
-p_data = ParamData(data_dir='./data')
+p_data = ParamData(data_files='./data')
 
 # Change the length of the ERP window and baseline
 p_epoch = ParamEpochs(time_epoch=(-0.5, 0.8), time_baseline=(-.1, 0))

@@ -1,33 +1,40 @@
 import os
 import mne
 import numpy as np
-from typing import Tuple
+from typing import Tuple, Union
+from pathlib import Path
 
 from p3k.params import SpellerInfo
 from p3k.read.bci_format import openvibe, bci2000
 
-def load_eeg_from_folder(data_path: str,
-                         speller_info: SpellerInfo,
-                         begin_stimuli_code: int,
-                         rescale_to_volt: bool = True,
-                         fix_openvibe_annotations: bool = True) -> Tuple[mne.io.BaseRaw, str, SpellerInfo]:
+def load_eeg_from_files(eeg_files: Union[str, list, Path],
+                        speller_info: SpellerInfo,
+                        begin_stimuli_code: int,
+                        rescale_to_volt: bool = True,
+                        fix_openvibe_annotations: bool = True) -> Tuple[mne.io.BaseRaw, str, SpellerInfo]:
     nb_stimlus_rows = None  # stores the number of rows in the P300 to separate rows and columns
-    assert os.path.exists(data_path), f"The folder containing data does not exist {data_path}"
-    fnames = []
-    print(f"Current path. {os.path.abspath(os.curdir)}")
-    for file in os.listdir(data_path):
-        if file.endswith(".gdf"):
+    if isinstance(eeg_files, str) or isinstance(eeg_files, Path):
+        input_files = [eeg_files]
+    elif isinstance(eeg_files, list):
+        input_files = eeg_files
+    else:
+        raise TypeError(f'Unknown type for eeg_files: {type(eeg_files)}')
+
+    acquisition_software = None
+    files_mismatch = False
+    for file in eeg_files:
+        if file.suffix.lower() == ".gdf":
+            files_mismatch = acquisition_software == bci2000
             acquisition_software = 'openvibe'
-            fnames.append(os.path.join(data_path, file))
-            print(os.path.join(data_path, file))
-        elif file.endswith(".dat"):
+        elif file.suffix.lower() == ".dat":
+            files_mismatch = acquisition_software == 'openvibe'
             acquisition_software = 'bci2000'
-            print(os.path.join(data_path, file))
-            fnames.append(os.path.join(data_path, file))
-    print(fnames)
+    if files_mismatch:
+        raise AssertionError(f"Can't load both openvibe and bci2000 at once")
+
     if acquisition_software == 'openvibe':
         # load and preprocess data ####################################################
-        raws = [mne.io.read_raw_gdf(f, preload=True) for f in fnames]
+        raws = [mne.io.read_raw_gdf(f, preload=True) for f in eeg_files]
         #nb_stimlus_rows, nb_stimulus_cols, nb_seq = ov_nb_row_stims, ov_nb_col_stims, ov_nb_sequences
         print(f"Using user defined SpellerInfo from files {SpellerInfo}")
         if fix_openvibe_annotations:
@@ -38,7 +45,7 @@ def load_eeg_from_folder(data_path: str,
 
 
     elif acquisition_software == 'bci2000':
-        raws, (nb_stimulus_rows, nb_stimulus_cols, nb_seq) = bci2000.load_bci2k(fnames,
+        raws, (nb_stimulus_rows, nb_stimulus_cols, nb_seq) = bci2000.load_bci2k(eeg_files,
                                                                                 begin_stimuli_code=begin_stimuli_code,
                                                                                 verbose=False)
         speller_info.nb_stimulus_rows = nb_stimulus_rows
@@ -49,6 +56,7 @@ def load_eeg_from_folder(data_path: str,
 
         if rescale_to_volt:
             raw = _rescale_microvolts_to_volt(raw)
+
 
     return (raw, acquisition_software, speller_info)
 

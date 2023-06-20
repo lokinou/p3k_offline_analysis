@@ -1,5 +1,10 @@
 from dataclasses import dataclass, field
 from typing import Union, List, Tuple
+from pathlib import Path
+import logging
+import re
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -15,8 +20,8 @@ class InternalParameters:
     EVENT_IDS: dict = field(init=True, default_factory=dict)
 
     def __post_init__(self):
-       self.TARGET_MAP = {'0': 0, '1': 1, '10': 10}
-       self.EVENT_IDS = {'NonTarget': 0, 'Target': 1}
+        self.TARGET_MAP = {'0': 0, '1': 1, '10': 10}
+        self.EVENT_IDS = {'NonTarget': 0, 'Target': 1}
 
 
 @dataclass
@@ -27,9 +32,57 @@ class ParamEpochs:
 
 @dataclass
 class ParamData:
-    data_dir: str = None
+    data_files: list = field(init=True, default_factory=list)
+    filename_filter: str = '.*'  # filename filter (or case insensitive regular expression)
+    extension_filter: str = None  # extension filter (or regular expression)
     acquisition_software = None  # bci2000 or openvibe or None for autodetection
 
+    def __post_init__(self):
+
+        filter_pat = re.compile(self.filename_filter, re.IGNORECASE)
+
+        # assertions
+        assert (self.data_files is not None)
+        if isinstance(self.data_files, str):
+            self.data_files = [Path(self.data_files)]
+        elif isinstance(self.data_files, Path):
+            self.data_files = [self.data_files]
+
+        assert isinstance(self.data_files, list)
+
+        valid_files = []
+
+        for fpath in self.data_files:
+            path_eeg_file = Path(fpath) if isinstance(fpath, str) else fpath
+            if not path_eeg_file.exists():
+                raise FileNotFoundError(path_eeg_file.absolute())
+
+            # if a directory is provided, iterate and find the files required
+            if path_eeg_file.is_dir():
+                # lookup inside the folder
+                for file in path_eeg_file.iterdir():
+                    if file.is_file():
+                        if self.extension_filter is not None:
+                            if re.match(self.extension_filter, file.suffix) \
+                                or file.suffix.find(self.extension_filter) >= 0:
+                                valid_files.append(file)
+                                logger.debug(f"found {file}")
+                        else:
+                            if file.suffix.lower() == ".gdf":
+                                # acquisition_software = 'openvibe'
+                                valid_files.append(file)
+                                logger.debug(f"found {file}")
+                            elif file.suffix.lower() == ".dat":
+                                # acquisition_software = 'bci2000'
+                                valid_files.append(file)
+                                logger.debug(f"found {file}")
+            else:
+                valid_files.append(path_eeg_file)
+
+        # use regular expression to filter it
+        valid_files = [vf for vf in valid_files if filter_pat.match(vf.stem) or vf.stem.find(filter_pat) >= 0]
+
+        self.data_files = valid_files if len(valid_files) > 0 else None
 
 @dataclass
 class ParamPreprocessing:
@@ -40,14 +93,17 @@ class ParamPreprocessing:
     apply_infinite_reference: bool = True  # re-referencing
     apply_ASR: bool = False  # use Artifact Subspace Reconstruction (artifact removal)
     apply_CSD: bool = False  # use Current Source Density (spatial filter)
+    #apply_XDAWN: bool = False  # use XDAWN, would require to train and fit the epochs during cross validation ugh
 
     def __post_init__(self):
         self.apply_resample = self.resample_freq is not None
+
 
 @dataclass
 class ParamArtifacts:
     reject_channels_full_of_artifacts: bool = False
     reject_artifactual_epochs: bool = False
+    correct_artifacts_asr: bool = False
     artifact_threshold: float = 100e-6
     ratio_tolerated_artifacts: float = 0.3
 
@@ -61,7 +117,7 @@ class ParamLDA:
 @dataclass
 class ParamInterface:
     display_channel_erp: List[int] = None
-    export_figures_path: str = 'out'
+    export_figures_path: str = 'results'
     export_figures: bool = field(init=False, default=False)
 
     def __post_init__(self):
@@ -96,6 +152,7 @@ class DisplayPlots:
     best_channel_erp: bool = True
     offline_accuracy: bool = True
     score_table: bool = True
+    fixed_display_range: list = None # Matthias
 
 
 @dataclass

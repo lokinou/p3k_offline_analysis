@@ -1,10 +1,15 @@
 import mne
 import numpy as np
+from typing import List
 from matplotlib import pyplot as plt
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.metrics import roc_curve, RocCurveDisplay, precision_recall_curve, PrecisionRecallDisplay
 
 from p3k import epoching
+
+color_T = '#c10629' # Netflix red
+color_NT = 'steelblue' # also very badass
+
 
 def plot_seconds(raw: mne.io.BaseRaw, seconds: float, title: str = None):
     fig = mne.make_fixed_length_epochs(raw, duration=seconds)[0].plot()
@@ -50,14 +55,94 @@ def plot_butterfly_topomap(epochs: mne.Epochs):
     figt_nt = plt.gcf().canvas.set_window_title('Non-Target joint plot')
     return fig_target, figt_nt
 
+# Group level analysis (Matthias)
+# Input: List with averaged evokeds per subject
+def plot_grand_average_erp(ci, evoked_per_subject, electrode, title="Grand Average"):
+    title = ''.join(electrode) + " " + title
+    # splitting by type to fit function signature
+    evoked_T = []
+    evoked_NT = []
+    for i in range(evoked_per_subject.__len__()):   # [ ] check for bug: is it really iterating over different evokeds?
+        evoked_T.append(evoked_per_subject[i][0])   # Target
+        evoked_NT.append(evoked_per_subject[i][1])  # NonTarget
 
-def plot_average_erp(epochs: mne.Epochs, picks=None):
+    if not ci:
+        evoked_T = mne.grand_average(evoked_T, interpolate_bads=False, drop_bads=False)
+        evoked_NT = mne.grand_average(evoked_NT, interpolate_bads=False, drop_bads=False)
+
+    evokeds = dict(NonTarget=evoked_NT, Target=evoked_T)
+    return mne.viz.plot_compare_evokeds(evokeds, picks=electrode, show_sensors=False,
+                                              title = title, styles={"Target": {"linewidth": 3}, "NonTarget": {"linewidth": 3}},
+                                              linestyles={'NonTarget': 'dashed'}, colors={'Target': color_T, 'NonTarget': color_NT})
+
+
+def plot_average_erp(epochs: mne.Epochs, title=None, picks=None):
+    title = ''.join(picks) + " " + title     # picks = [f'eeg{n}' for n in range(10, 15)]
     l_target, l_nt = epoching.get_avg_target_nt(epochs=epochs)
-    evokeds = dict(NonTarget=l_nt,
-                   Target=l_target)
-    # picks = [f'eeg{n}' for n in range(10, 15)]
-    fig_handle = mne.viz.plot_compare_evokeds(evokeds, picks=picks, combine='mean')
+    evokeds = dict(NonTarget=l_nt, Target=l_target)
+    fig_handle = mne.viz.plot_compare_evokeds(evokeds, picks=picks, show_sensors=False,
+                                              title = title, linestyles={'NonTarget': 'dashed'},
+                                              colors={'Target': 'r', 'NonTarget': 'b'} )
     return fig_handle
+
+# Matthias. Like 'plot_average_erp', but without averaging of epochs to retain information necessary for CI calculation
+def plot_CI_erp(epochs: mne.Epochs, title=None, ch_subset: List[str]=None, average_channels: bool=False, display_range=None):
+    title = "ERP" if title is None else title
+
+    list_figs = []
+
+    if ch_subset is None or len(ch_subset) == 0:
+        idc_ch = range(len(epochs.ch_names))
+        lbl_ch = epochs.ch_names.copy()
+    elif isinstance(ch_subset, list):
+        # list of indices
+        if isinstance(ch_subset[0], int):
+            idc_ch = ch_subset.copy()
+            lbl_ch = epochs.ch_names[ch_subset]
+        # list of channel names
+        elif isinstance(ch_subset[0], str):
+            idc_ch = [index for index, value in enumerate(epochs.ch_names) if value in ch_subset]
+            lbl_ch = ch_subset
+        else:
+            raise NotImplementedError()
+
+    list_loop = []
+    if not average_channels:
+        list_loop = [{'title': f"{title} {ch_lbl}",
+                      'ch_picks': ch_idx,
+                      'fn_lbl': f'erp_{ch_lbl}'} for ch_idx, ch_lbl in list(zip(idc_ch, lbl_ch))]
+
+    else:
+        ch_str = f"[{','.join(lbl_ch)}]"
+        list_loop = {'title': f"{title} avg {ch_str}",
+                     'ch_picks': idc_ch,
+                     'fn_lbl': f'erp_AVG_{len(lbl_ch)}ch'}
+
+
+    for d in list_loop:
+        it_title = d['title']
+        it_picks = d['ch_picks']
+        it_lbl = d['fn_lbl']
+
+        #if display_range == []:
+        #    display_range = [-5, 10]  # make it automatic matty
+        evoked = dict(NonTarget=list(epochs['NonTarget'].iter_evoked()), Target=list(epochs['Target'].iter_evoked()))
+        axes = mne.viz.plot_compare_evokeds(evoked, picks=it_picks,
+                                            show_sensors=True, combine='mean',
+                                            ylim=dict(eeg=display_range) if display_range is not None else None,
+                                            # ci=True by default
+                                            title=it_title,
+                                            styles={"Target": {"linewidth": 3}, "NonTarget": {"linewidth": 3}},
+                                            linestyles={'NonTarget': 'dashed'},
+                                            colors={'Target': color_T, 'NonTarget': color_NT})
+        list_figs.append({'ax': axes[0],
+                         'title': it_title,
+                         'evoked': evoked,
+                         'lbl': it_lbl})
+        # One could unify ylim scales by storing evoked first then making the plots
+    return list_figs
+
+
 
 
 def plot_channel_average(epochs: mne.Epochs):
@@ -84,7 +169,7 @@ def plot_channel_average(epochs: mne.Epochs):
             ch_idx = plot_idx
             print('plotting channel {}'.format(ch_idx + 1))
             mne.viz.plot_compare_evokeds(evokeds, picks=[epochs.info['ch_names'][ch_idx]],
-                                         legend=False,
+                                         legend=False, truncate_yaxis = True, # Bugfix Matthias: added truncate_yaxis = True # 'auto' occasionally crashed when axis had only 1 tick
                                          axes=axes[plot_idx // splt_width, plot_idx % splt_width], show=False)
             # plt.show(block=False)
             plt.subplots_adjust(hspace=0.5, wspace=.5)
@@ -102,6 +187,65 @@ def plot_channel_average(epochs: mne.Epochs):
 
     print('plotting averaged channels')
     ax_evoked = mne.viz.plot_compare_evokeds(evokeds, picks=epochs.info['ch_names'], combine='mean',
+                                     legend=False,
+                                     axes=axes[-1, -1], show=False)
+
+    # retrieve the legend and move it in the previous cell
+
+    plt.subplots_adjust(hspace=1, wspace=.1)
+    plt.autoscale(enable=True,  axis="both", tight=None)
+    plt.show()
+    return fig
+
+
+
+# Matthias  # unfinished - it runs, but shows the same signal everywhere
+def plot_GA_channel_average(evoked_per_subject):
+    # splitting by type to fit function signature
+    evoked_T = []
+    evoked_NT = []
+    for i in range(evoked_per_subject.__len__()):
+        evoked_T.append(evoked_per_subject[i][0])   # Target
+        evoked_NT.append(evoked_per_subject[i][1])  # NonTarget
+    evoked_T = mne.grand_average(evoked_T, interpolate_bads=False, drop_bads=False)
+    evoked_NT = mne.grand_average(evoked_NT, interpolate_bads=False, drop_bads=False)
+
+    evokeds = dict(NonTarget=evoked_NT, Target=evoked_T)
+
+    #nb_chans = epochs['Target']._data.shape[1]
+    nb_chans = 12
+    splt_width = int(np.floor(
+        np.sqrt(1.0 * nb_chans + 2)))  # adding an extra plot with all channels combined at the end and a legend
+    splt_height = splt_width if splt_width * splt_width >= nb_chans + 1 else splt_width + 1
+    while splt_height * splt_width < nb_chans + 2:
+        splt_height += 1
+    fig, axes = plt.subplots(splt_height, splt_width, figsize=(10, 8), sharex='all', sharey='all')
+
+    nb_cells = splt_height * splt_width
+    for plot_idx in range(nb_cells):
+        # cells containing data
+        if plot_idx in range(nb_chans):
+            ch_idx = plot_idx
+            print('plotting channel {}'.format(ch_idx + 1))
+            mne.viz.plot_compare_evokeds(evokeds, #picks=[epochs.info['ch_names'][ch_idx]],
+                                         legend=False, truncate_yaxis = True, # Bugfix Matthias: added truncate_yaxis = True # 'auto' occasionally crashed when axis had only 1 tick
+                                         axes=axes[plot_idx // splt_width, plot_idx % splt_width], show=False)
+            # plt.show(block=False)
+            plt.subplots_adjust(hspace=0.5, wspace=.5)
+            # plt.pause(.05)
+
+        # filler and legend cells
+        elif plot_idx <= nb_cells - 2:
+            ax = axes[plot_idx // splt_width, plot_idx % splt_width]
+            ax.clear()  # clears the random data I plotted previously
+            ax.set_axis_off()  # removes the XY axes
+
+            if plot_idx == nb_cells - 2:
+                handles, labels = axes[0, 0].get_legend_handles_labels()
+                leg = ax.legend(handles, labels)
+
+    print('plotting averaged channels')
+    ax_evoked = mne.viz.plot_compare_evokeds(evokeds, combine='mean', #picks=epochs.info['ch_names'],
                                      legend=False,
                                      axes=axes[-1, -1], show=False)
 
