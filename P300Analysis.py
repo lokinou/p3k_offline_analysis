@@ -76,7 +76,7 @@ def run_analysis(param_channels: ParamChannels = None,
                  param_epochs: ParamEpochs = None,
                  internal_params: InternalParameters = None,
                  current_folder: str = None,
-                 electrodes: list = [0], # Todo: Test
+                 electrodes: list = [0],            # Matthias
                  classify: bool = False):
     if param_channels is None:
         param_channels = ParamChannels()
@@ -151,8 +151,10 @@ def run_analysis(param_channels: ParamChannels = None,
     # Channel definition
     raw = channels.define_channels(raw=raw,
                                    channel_names=param_channels.cname,
-                                   #channel_of_interest=param_channels.interest, # Matthias, allows to restrict processes suchs as epoch rejection on a subset of channels
                                    montage=None)
+
+    if not param_artifacts.correct_artifacts_asr:   # Restrict to channels of interest. Should not be done with ASR # Matthias
+        raw.pick(param_channels.select_subset)
 
     if display_plots.montage_plots:
         raw.plot_sensors(show_names=True)
@@ -193,7 +195,8 @@ def run_analysis(param_channels: ParamChannels = None,
 
     # Bandpass filtering
     raw = raw.filter(param_preproc.bandpass[0], param_preproc.bandpass[1], fir_window='hann', method='iir')
-    #raw = raw.notch_filter(param_preproc.notch)  # removes 50Hz noise
+    if param_preproc.apply_notch:
+        raw = raw.notch_filter(param_preproc.notch)  # removes 50Hz noise
     if display_plots.bandpassed:
         plots.plot_seconds(raw=raw, seconds=10)
 

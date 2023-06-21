@@ -35,6 +35,7 @@ class ParamData:
 class ParamPreprocessing:
     resample_freq: int = None
     bandpass: tuple = (.5, 40)
+    apply_notch: bool = False
     notch: int = 50
     apply_resample: bool = field(init=False, default=False)
     apply_infinite_reference: bool = True  # re-referencing

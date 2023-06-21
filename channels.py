@@ -69,7 +69,7 @@ def define_channels(raw: mne.io.BaseRaw,
             t = 'eeg'  # if not found, it might be a non-10-20 EEG channel (e.g. cEEGRid).
                        # Keep as EEG, otherwise it will be dropped in some later steps!
                        # (epochs.py -> picks = _picks_to_idx(self.info, picks, 'data_or_ica', ()))  # Matthias
-             # Program still complains that cEEGrid is not in the montage. Fix otherwise
+             # Program still complains that cEEGrid is not in the montage. 'ceegrid' is not allowed as a type. Fix otherwise
 
         types.append(t)
 
