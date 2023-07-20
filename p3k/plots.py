@@ -1,6 +1,6 @@
 import mne
 import numpy as np
-from typing import List
+from typing import List, Tuple, Dict, Union
 from matplotlib import pyplot as plt
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.metrics import roc_curve, RocCurveDisplay, precision_recall_curve, PrecisionRecallDisplay
@@ -86,7 +86,12 @@ def plot_average_erp(epochs: mne.Epochs, title=None, picks=None):
     return fig_handle
 
 # Matthias. Like 'plot_average_erp', but without averaging of epochs to retain information necessary for CI calculation
-def plot_CI_erp(epochs: mne.Epochs, title=None, ch_subset: List[str]=None, average_channels: bool=False, display_range=None):
+def plot_CI_erp(epochs: mne.Epochs,
+                groups: Dict[str, Union[str, List[bool]]] = {'Target': 'Target', 'NonTarget': 'NonTarget'},
+                title: str = None, annotation: str = None,
+                ch_subset: List[str]=None, average_channels: bool=False, display_range=None,
+                figure_grid: bool = True, subplots_per_col: int = 3,
+                figsize: Tuple[int,int] = None):
     title = "ERP" if title is None else title
 
     list_figs = []
@@ -118,29 +123,95 @@ def plot_CI_erp(epochs: mne.Epochs, title=None, ch_subset: List[str]=None, avera
                      'ch_picks': idc_ch,
                      'fn_lbl': f'erp_AVG_{len(lbl_ch)}ch'}
 
+    axes = None
+    legend_stored = None
+    # decide whether figures must be put in a grid
+    if figure_grid:
+        # Determine the number of rows and columns for the grid
+        n = len(list_loop)
+        cols = subplots_per_col if n > subplots_per_col else n
+        rows = np.ceil(n / cols).astype(int)
 
-    for d in list_loop:
+        fig, axes = plt.subplots(nrows=rows, ncols=cols,
+                            figsize=(5*cols, 5*rows) if figsize is None else figsize,
+                            sharex=True, sharey=True, )
+
+    n_drawn = -1
+    for i_plot, d in enumerate(list_loop):
         it_title = d['title']
         it_picks = d['ch_picks']
         it_lbl = d['fn_lbl']
 
+        if axes is not None:
+            ax = axes[i_plot // cols, i_plot % cols]
+            #ax.set_xticks([])
+            #ax.set_yticks([])
+        else:
+            ax = None
         #if display_range == []:
         #    display_range = [-5, 10]  # make it automatic matty
-        evoked = dict(NonTarget=list(epochs['NonTarget'].iter_evoked()), Target=list(epochs['Target'].iter_evoked()))
-        axes = mne.viz.plot_compare_evokeds(evoked, picks=it_picks,
-                                            show_sensors=True, combine='mean',
-                                            ylim=dict(eeg=display_range) if display_range is not None else None,
-                                            # ci=True by default
-                                            title=it_title,
-                                            styles={"Target": {"linewidth": 3}, "NonTarget": {"linewidth": 3}},
-                                            linestyles={'NonTarget': 'dashed'},
-                                            colors={'Target': color_T, 'NonTarget': color_NT})
-        list_figs.append({'ax': axes[0],
-                         'title': it_title,
-                         'evoked': evoked,
-                         'lbl': it_lbl})
-        # One could unify ylim scales by storing evoked first then making the plots
-    return list_figs
+
+        # iterate over evoked
+        evoked = {}  # {'Target': epochs['Target'], 'NonTarget': epochs['NonTarget']} by default
+        group_labels = []
+        for group_label, epochs_filter in groups.items():
+            group_labels.append(group_label)
+            evoked[group_label] = list(epochs[epochs_filter].iter_evoked())
+
+        new_fig = mne.viz.plot_compare_evokeds(evoked, picks=it_picks,
+                                               axes=ax,
+                                               show=~figure_grid,
+                                               show_sensors=True, combine='mean',
+                                               ci=True,
+                                               ylim=dict(eeg=display_range) if display_range is not None else None,
+                                               # ci=True by default
+                                               title=it_title,
+                                               styles={group_labels[0]: {"linewidth": 3},
+                                                       group_labels[1]: {"linewidth": 3}},
+                                               linestyles={group_labels[1]: 'dashed'},
+                                               colors={group_labels[0]: color_T, group_labels[1]: color_NT})
+
+
+        if figure_grid:
+            if legend_stored is None:
+                legend_stored = ax.get_legend_handles_labels()
+            ax.legend().set_visible(False)
+
+
+        if not figure_grid:
+            list_figs.append({'ax': new_fig,
+                              'title': it_title,
+                              'evoked': evoked,
+                              'lbl': it_lbl})
+
+
+        n_drawn = max(i_plot, n_drawn)
+
+    if figure_grid:
+        # empty remaining empty subplots
+        for i_empty in list(range(n_drawn, rows*cols)):
+            ax = axes[i_empty // cols, i_empty % cols]
+            ax.set_axis_off()
+
+        if n_drawn == rows*cols:
+            legend_axis = axes[-1, -1]
+        else:
+            legend_axis = axes[0, 0]
+        legend_axis.legend(legend_stored[0], legend_stored[1], loc='upper left')
+            # One could unify ylim scales by storing evoked first then making the plots
+
+        # add an annotation in the bottom left
+        if annotation is not None:
+            legend_axis.annotate(annotation, xy=axes[-1, -1].viewLim.min)
+
+        ret_fig = fig
+        fig.show()
+    else:
+
+        ret_fig = list_figs
+
+
+    return ret_fig
 
 
 
