@@ -338,9 +338,13 @@ def run_analysis(param_channels: ParamChannels = None,
         #fig_ERP.set_size_inches(4, 3)     # error because code halts during figure display, no ref after figure closed manually. Todo: Put into function before figure shown
         if param_interface.export_figures:
             out_folder = Path(param_interface.export_figures_path).joinpath(f'{output_name}')
-            for dict_fig in list_fig_ERP:
-                out_filepath = out_folder.joinpath(f'{output_name}_{dict_fig["lbl"]}')
-                dict_fig['ax'].savefig(out_filepath, dpi=300, facecolor='w', edgecolor='w', bbox_inches='tight')
+            if isinstance(list_fig_ERP, list):
+                for dict_fig in list_fig_ERP:
+                    out_filepath = out_folder.joinpath(f'{output_name}_{dict_fig["lbl"]}')
+                    dict_fig['ax'].savefig(out_filepath, dpi=300, facecolor='w', edgecolor='w', bbox_inches='tight')
+            else:
+                out_filepath = out_folder.joinpath(f'{output_name}')
+                list_fig_ERP.savefig(out_filepath, dpi=300, facecolor='w', edgecolor='w', bbox_inches='tight')
 
     # single trial heatmaps
     if display_plots.erp_heatmap:

@@ -4,7 +4,7 @@ from typing import List, Tuple, Dict, Union
 from matplotlib import pyplot as plt
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.metrics import roc_curve, RocCurveDisplay, precision_recall_curve, PrecisionRecallDisplay
-
+from matplotlib.ticker import MaxNLocator
 from p3k import epoching
 
 color_T = '#c10629' # Netflix red
@@ -164,6 +164,7 @@ def plot_CI_erp(epochs: mne.Epochs,
                                                show_sensors=True, combine='mean',
                                                ci=True,
                                                ylim=dict(eeg=display_range) if display_range is not None else None,
+                                               truncate_yaxis=False,
                                                # ci=True by default
                                                title=it_title,
                                                styles={group_labels[0]: {"linewidth": 3},
@@ -176,6 +177,21 @@ def plot_CI_erp(epochs: mne.Epochs,
             if legend_stored is None:
                 legend_stored = ax.get_legend_handles_labels()
             ax.legend().set_visible(False)
+            if not display_range:
+                min_y = 0
+                max_y = 0
+                for ax in axes.flat:
+                    cur_min = ax.dataLim.min[1]
+                    cur_max = ax.dataLim.max[1]
+                    cur_min = cur_min if np.isfinite(cur_min) else min_y
+                    cur_max = cur_max if np.isfinite(cur_max) else max_y
+
+                    min_y = min(min_y, cur_min)
+                    max_y = max(max_y, cur_max)
+                for ax in axes.flat:
+                    ax.set_ylim(bottom=min_y, top=max_y)
+                    ax.set_ybound(lower=min_y, upper=max_y)
+                    ax.yaxis.set_major_locator(MaxNLocator(nbins=5))
 
 
         if not figure_grid:
@@ -189,7 +205,7 @@ def plot_CI_erp(epochs: mne.Epochs,
 
     if figure_grid:
         # empty remaining empty subplots
-        for i_empty in list(range(n_drawn, rows*cols)):
+        for i_empty in list(range(n_drawn+1, rows*cols)):
             ax = axes[i_empty // cols, i_empty % cols]
             ax.set_axis_off()
 
